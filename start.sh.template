@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export API_KEY="API_KEY"
+export API_SECRET="API_SECRET"
+export TESTNET=True
+export LOGLEVEL=INFO
+
+export APP_HOME=$(dirname "$0")
+echo APP_HOME=$APP_HOME
+python3 -m bots.alertgo >>$APP_HOME/output.log 2>&1 &

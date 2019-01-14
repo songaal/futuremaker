@@ -1,0 +1,6 @@
+.idea/
+*.pyc
+*.tar.gz
+*.log
+start.sh
+*.bak

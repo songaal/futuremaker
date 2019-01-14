@@ -1,0 +1,7 @@
+bitmex
+websockets
+aiohttp
+pandas
+numpy
+pytz
+TA-Lib

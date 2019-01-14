@@ -1,0 +1,6 @@
+README.md
+setup.py
+futuremaker.egg-info/PKG-INFO
+futuremaker.egg-info/SOURCES.txt
+futuremaker.egg-info/dependency_links.txt
+futuremaker.egg-info/top_level.txt
