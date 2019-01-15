@@ -47,6 +47,11 @@ class BitmexAPI(object):
                     result = self.client.Order.Order_new(symbol=self.symbol, ordType=type,
                                                          orderQty=order_qty, stopPx=stop_price).result()
 
+            elif type == 'LimitIfTouched' or type == "StopLimit":
+                result = self.client.Order.Order_new(symbol=self.symbol, ordType=type, orderQty=order_qty,
+                                                     price=price, stopPx=stop_price,
+                                                     execInst='ParticipateDoNotInitiate').result()
+
             logger.debug('NEW ORDER > symbol[%s] Result > %s', self.symbol, result[0])
             order = result[0]
             status = order['ordStatus']
@@ -73,6 +78,9 @@ class BitmexAPI(object):
                 elif type == 'Stop':
                     result = self.client.Order.Order_amend(orderID=order_id, orderQty=order_qty,
                                                            stopPx=stop_price).result()
+                elif type == 'LimitIfTouched' or type == "StopLimit":
+                    result = self.client.Order.Order_amend(orderID=order_id, orderQty=order_qty,
+                                                           price=price, stopPx=stop_price).result()
                 logger.debug('AMEND ORDER > order_id[%s] symbol[%s] Result > %s', order_id, self.symbol, result[0])
                 order = result[0]
                 status = order['ordStatus']
@@ -136,3 +144,10 @@ class BitmexAPI(object):
         result = self.client.User.User_getWalletHistory(currency='XBt', count=count).result()
         return result[0]
 
+    def get_order(self, count=100):
+        filter = utils.json_dumps({"open": True})
+        result = self.client.Order.Order_getOrders(symbol=self.symbol, count=count, filter=filter,
+                                                   columns="orderID,symbol,side,simpleOrderQty," +
+                                                           "orderQty,price,stopPx,ordType,ordStatus," +
+                                                           "leavesQty,text,timestamp,transactTime").result()[0]
+        return result
