@@ -138,6 +138,3 @@ class TelegramBotAdapter(object):
         loop = asyncio.get_event_loop()
         loop.create_task(get_update())
         # loop.run_forever()
-
-
-trader_bot = TelegramBotAdapter("589994875:AAG2KC96wcVCe95SygjbxkEpUCV26TBwF7A", 455272535)
