@@ -37,6 +37,7 @@ class BitmexAPI(object):
             if type == 'Limit':
                 result = self.client.Order.Order_new(symbol=self.symbol, ordType=type, orderQty=order_qty,
                                                      price=price,
+                                                     side='Buy' if order_qty > 0 else 'Sell',
                                                      execInst='ParticipateDoNotInitiate' if post_only else '').result()
             elif type == 'Stop':
                 if close_position:

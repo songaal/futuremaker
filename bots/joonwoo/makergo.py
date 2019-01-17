@@ -1,8 +1,6 @@
-import asyncio
 import os
 import sys
 import datetime
-from collections import defaultdict
 
 from ccxt import ExchangeError
 
@@ -36,6 +34,8 @@ class AlertGo(Algo):
         self.limit_order = None
         self.is_order_request = False
         self.pare_orders = []
+        self.order_qty = 10
+        self.avg_entry_price = 0
 
     def update_orderbook(self, orderbook):
         # logger.info('update_orderbook > %s  %s', orderbook['bids'][0], orderbook['asks'][0])
@@ -51,16 +51,36 @@ class AlertGo(Algo):
         self.count = 0
 
         diff_sum = sum(df.Close - df.Open)
+        add_qty = 0
         logger.info(f"포지션: {self.position}, 차이가격: {diff_sum}")
-        # TODO 방향이 바뀌면 기존 주문,포지션 정리.
-        if diff_sum > 0 and ("NTL" == self.position or self.position == "BOT"):
+        if diff_sum > 0:
+
+            if self.position == "SLD":
+                # SLD 포지션이면 정리.
+                for pare_order in self.pare_orders:
+                    try:
+                        self.nexus.api.cancel_order(pare_order["limit_order"])
+                    except ExchangeError:
+                        logger.debug("<ignore> 없어진 요청.")
+                    try:
+                        self.nexus.api.cancel_order(pare_order["stop_limit_order"])
+                    except ExchangeError:
+                        logger.debug("<ignore> 없어진 요청.")
+
+                add_qty = self.limit_order["orderQty"]
+                self.limit_order = None
+                self.pare_orders = []
+
             # 매수
-            order = self.nexus.api.put_order(order_qty=10, price=df.Close[-1], side="Buy")
+            order = self.nexus.api.put_order(order_qty=(self.order_qty + add_qty),
+                                             # side="Buy",
+                                             price=df.Close[-1] - 0.5
+                                             )
             if order["ordStatus"] == "New":
-                stop_limit_order = self.nexus.api.put_order(order_qty=-10,
-                                                            side="Sell",
-                                                            price=df.Close[-1] - self.stop_limit_tick,
-                                                            stop_price=df.Close[-1] - self.stop_limit_tick,
+                stop_limit_order = self.nexus.api.put_order(order_qty=-(self.order_qty + add_qty),
+                                                            # side="Sell",
+                                                            price=df.Close[-1] - 0.5 - self.stop_limit_tick,
+                                                            stop_price=df.Close[-1] - 0.5 - self.stop_limit_tick,
                                                             type="StopLimit")
                 self.pare_orders.append({
                     "price": df.Close[-1],
@@ -70,14 +90,33 @@ class AlertGo(Algo):
                 })
                 self.is_order_request = True
 
-        elif diff_sum < 0 and ("NTL" == self.position or self.position == "SLD"):
+        elif diff_sum < 0:
+
+            if self.position == "BOT":
+                # BOT 포지션이면 정리.
+                for pare_order in self.pare_orders:
+                    try:
+                        self.nexus.api.cancel_order(pare_order["limit_order"])
+                    except ExchangeError:
+                        logger.debug("<ignore> 없어진 요청.")
+                    try:
+                        self.nexus.api.cancel_order(pare_order["stop_limit_order"])
+                    except ExchangeError:
+                        logger.debug("<ignore> 없어진 요청.")
+
+                add_qty = self.limit_order["orderQty"]
+                self.limit_order = None
+                self.pare_orders = []
+
             # 매도
-            order = self.nexus.api.put_order(order_qty=-10, price=df.Close[-1] + 0.5, side="Sell")
+            order = self.nexus.api.put_order(order_qty=-(self.order_qty + add_qty),
+                                             # side="Sell",
+                                             price=df.Close[-1] + 0.5)
             if order["ordStatus"] == "New":
-                stop_limit_order = self.nexus.api.put_order(order_qty=10,
-                                                            side="Buy",
-                                                            price=df.Close[-1] + self.stop_limit_tick,
-                                                            stop_price=df.Close[-1] + self.stop_limit_tick,
+                stop_limit_order = self.nexus.api.put_order(order_qty=(self.order_qty + add_qty),
+                                                            # side="Buy",
+                                                            price=df.Close[-1] + 0.5 + self.stop_limit_tick,
+                                                            stop_price=df.Close[-1] + 0.5 + self.stop_limit_tick,
                                                             type="StopLimit")
                 self.pare_orders.append({
                     "price": df.Close[-1],
@@ -92,7 +131,13 @@ class AlertGo(Algo):
 
     def update_position(self, position):
         logger.info('update_position > %s', position)
-        price = 0 if position['avgEntryPrice'] is None else position['avgEntryPrice']
+        try:
+            price = position["avgEntryPrice"]
+            self.avg_entry_price = position["avgEntryPrice"]
+        except KeyError:
+            logger.debug("시정 평균가가 변동이 없습니다.")
+            price = self.avg_entry_price
+
         current_qty = 0 if position["currentQty"] is None else position["currentQty"] * -1
 
         if position['currentQty'] > 0:
@@ -104,8 +149,8 @@ class AlertGo(Algo):
         else:
             self.position = "NTL"
 
-        logger.info(f"규모: {current_qty}, 진입가: {position['avgEntryPrice']}")
-        if position["currentQty"] != 0 or 0 < position['currentQty'] > 10:
+        logger.info(f"규모: {current_qty}, 시장평균가: {price}")
+        if position["currentQty"] != 0:
             # 포지션을 가지고 있을 경우
             if self.limit_order is None:
                 # 익절 주문.
@@ -114,7 +159,9 @@ class AlertGo(Algo):
                                                             stop_price=price,
                                                             type="LimitIfTouched")
 
-            elif self.limit_order is not None and self.is_order_request:
+            elif self.limit_order is not None \
+                    and self.is_order_request \
+                    and self.limit_order["orderQty"] != current_qty:
                 # 기존 주문 가격, 규모 수정.
                 self.limit_order = self.nexus.api.amend_order(order=self.limit_order,
                                                               order_qty=current_qty,
@@ -130,7 +177,11 @@ class AlertGo(Algo):
         if self.count % 2 == 0:
             return
 
-        last_price = position["lastPrice"]
+        try:
+            last_price = position["lastPrice"]
+        except KeyError:
+            return
+
         order_list = self.nexus.api.get_order()
         cancel_orders = []
         remove_orders = []
@@ -177,6 +228,7 @@ class AlertGo(Algo):
         # position['avgEntryPrice'] 평균진입가격
         # position['markPrice'] 시장평균가
         # position['marginCallPrice'] 청산가
+        # position["liquidationPrice"] 청산가.
         # self.nexus.api.order_history()[0]['ordType'] 주문타입
 
 
