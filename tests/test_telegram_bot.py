@@ -18,6 +18,7 @@ class test_result(object):
         print("no")
         return "주문을 취소하였습니다."
 
+
 class TelegramBotAdapter(object):
 
     def __init__(self, bot_token=None, chat_id=None, message_handler={}, expire_time=60, expired_handler=None):
@@ -155,7 +156,7 @@ class TelegramBotAdapter(object):
         loop.create_task(get_update())
 
         # 테스트에서만 사용.
-        # loop.run_forever()
+        loop.run_forever()
 
 
 trader_bot = TelegramBotAdapter("589994875:AAG2KC96wcVCe95SygjbxkEpUCV26TBwF7A", 455272535)

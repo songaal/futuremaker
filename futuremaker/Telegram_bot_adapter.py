@@ -1,7 +1,6 @@
 import asyncio
 import json
 import random
-import threading
 import time
 
 import aiohttp
@@ -16,8 +15,7 @@ class TelegramBotAdapter(object):
     def __init__(self, bot_token=None, chat_id=None, message_handler={}, expire_time=60, expired_handler=None):
         self.bot_id = str(random.randint(random.randint(1, 99), random.randint(100, 9999)))
         self.bot_token = bot_token
-        self.bot = Bot(bot_token)
-        self.send_count = 0
+        self._bot = Bot(bot_token)
         self.chat_id = chat_id
         self.message_handler = message_handler
         if expired_handler is not None:
@@ -29,17 +27,17 @@ class TelegramBotAdapter(object):
         self._watch_update()
 
     def expired_question(self, question):
-        self.bot.edit_message_text(chat_id=question["message"]["chat_id"],
+        self._bot.edit_message_text(chat_id=question["message"]["chat_id"],
                                    message_id=question["message"]["message_id"],
                                    text=f"{question['message']['text']}\n결과 >> 시간초과",
                                    parse_mode="HTML")
 
     def send(self, text="", reply_markup=None):
         send_text = f"BOT ID: {self.bot_id}\n" + text
-        return self.bot.send_message(text=send_text,
-                                     parse_mode="HTML",
-                                     chat_id=self.chat_id,
-                                     reply_markup=reply_markup)
+        return self._bot.send_message(text=send_text,
+                                      parse_mode="HTML",
+                                      chat_id=self.chat_id,
+                                      reply_markup=reply_markup)
 
     def send_question(self, question_text="",
                       yes_name="Yes", yes_func=None, yes_param=None,
@@ -69,28 +67,45 @@ class TelegramBotAdapter(object):
             if update_type == "message":
                 # TODO 메시지로 도착했을때 명령어 기능 추가하면 좋을듯..
                 logger.debug("[미개발..] %s", text)
+
             elif update_type == "callback_query":
+                # 요청한 봇이 맞는지 확인한다.
                 bot_id = text.split("\n")[0].split(":")[1].strip()
                 if self.bot_id != bot_id:
                     logger.debug("다른 봇 메시지는 무시합니다.")
                     return
+
+                #
                 question = self.question_tmp.get(message_id)
                 del self.question_tmp[message_id]
+
+                # 버튼을 지운다.
+                self._bot.edit_message_text(chat_id=question["message"]["chat_id"],
+                                            message_id=question["message"]["message_id"],
+                                            text=f"{question['message']['text']}",
+                                            parse_mode="HTML")
+                # 선택에 따라서 함수 호출한다.
+                result = None
                 if choice == "YES":
                     logger.debug("selected: YES")
                     if question['yes_func'] is not None:
                         result = question['yes_func'](question['yes_param'])
+
                 else:
                     logger.debug("selected: No")
                     if question['no_func'] is not None:
                         result = question['no_func'](question['no_param'])
 
-                self.bot.edit_message_text(chat_id=question["message"]["chat_id"],
-                                           message_id=question["message"]["message_id"],
-                                           text=f"{question['message']['text']}\n결과 >> {result}",
-                                           parse_mode="HTML")
+                # 결과를 전송한다.
+                if result is None:
+                    result = "No Data"
+                self._bot.edit_message_text(chat_id=question["message"]["chat_id"],
+                                            message_id=question["message"]["message_id"],
+                                            text=f"{question['message']['text']}\n결과 >> {result}",
+                                            parse_mode="HTML")
         except KeyError:
-            logger.error(KeyError)
+            # ignore 요청의 두번 답을 말할경우.
+            pass
 
     def _watch_update(self):
         async def get_update():
@@ -132,9 +147,8 @@ class TelegramBotAdapter(object):
                                         self.question_tmp.unlook()
                                     except KeyError:
                                         logger.error("key error", KeyError)
-
                     # 한번씩 쉬면서 대화 내용 조회하기.
-                    time.sleep(1)
+                    time.sleep(2)
         loop = asyncio.get_event_loop()
         loop.create_task(get_update())
         # loop.run_forever()
