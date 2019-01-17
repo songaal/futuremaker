@@ -148,13 +148,3 @@ def _extract_topic(topic_request):
         tmp = str.split(':')
         list.append(tmp[0])
     return list
-
-
-async def send_telegram(telegram_bot_token, chat_id, text):
-    url = 'https://api.telegram.org/bot' + telegram_bot_token
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params={
-            'chat_id': chat_id,
-            'text': text,
-        }) as response:
-            return await response.text()

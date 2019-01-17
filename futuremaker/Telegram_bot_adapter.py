@@ -12,8 +12,16 @@ from futuremaker.log import logger
 
 class TelegramBotAdapter(object):
 
-    def __init__(self, bot_token=None, chat_id=None, message_handler={}, expire_time=60, expired_handler=None):
-        self.bot_id = str(random.randint(random.randint(1, 99), random.randint(100, 9999)))
+    def __init__(self, bot_id=None, bot_token=None, chat_id=None, message_handler={},
+                 expire_time=60, expired_handler=None):
+        if bot_token is None:
+            logger.debug("Telegram Bot Disabled.")
+            return
+        if bot_id is None or bot_id == "":
+            self.bot_id = str(random.randint(random.randint(1, 99), random.randint(100, 9999)))
+        else:
+            self.bot_id = bot_id
+        logger.debug("Telegram Bot ID. %s", self.bot_id)
         self.bot_token = bot_token
         self._bot = Bot(bot_token)
         self.chat_id = chat_id
@@ -23,7 +31,6 @@ class TelegramBotAdapter(object):
         else:
             self.question_tmp = expiredict(expire_time=expire_time,
                                            expired_callback=self.expired_question)
-
         self._watch_update()
 
     def expired_question(self, question):
@@ -75,9 +82,11 @@ class TelegramBotAdapter(object):
                     logger.debug("다른 봇 메시지는 무시합니다.")
                     return
 
-                #
+                # 임시저장된 내용 가져온수 삭제처리.
+                self.question_tmp.lock()
                 question = self.question_tmp.get(message_id)
                 del self.question_tmp[message_id]
+                self.question_tmp.unlock()
 
                 # 버튼을 지운다.
                 self._bot.edit_message_text(chat_id=question["message"]["chat_id"],
@@ -142,13 +151,10 @@ class TelegramBotAdapter(object):
                                             offset = result["update_id"]
                                             continue
 
-                                        self.question_tmp.lock()
                                         self.distribute(update_type, str(message_id), text, choice)
-                                        self.question_tmp.unlook()
                                     except KeyError:
                                         logger.error("key error", KeyError)
                     # 한번씩 쉬면서 대화 내용 조회하기.
-                    time.sleep(2)
+                    time.sleep(1)
         loop = asyncio.get_event_loop()
         loop.create_task(get_update())
-        # loop.run_forever()

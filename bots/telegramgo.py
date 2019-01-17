@@ -10,7 +10,7 @@ import talib as ta
 VERSION='1.0.0'
 
 
-class AlertGo(Algo):
+class TelegramGo(Algo):
 
     def __init__(self, params):
         symbol = params['symbol']
@@ -24,13 +24,13 @@ class AlertGo(Algo):
         telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
         testnet = os.getenv('TESTNET') == 'True'
         dry_run = os.getenv('DRY_RUN') == 'True'
-        super(AlertGo, self).__init__(symbol=symbol, leverage=leverage, candle_limit=candle_limit,
-                                      candle_period=candle_period, api_key=api_key, api_secret=api_secret,
-                                      testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
-                                      telegram_chat_id=telegram_chat_id, http_port=http_port)
+        super(TelegramGo, self).__init__(symbol=symbol, leverage=leverage, candle_limit=candle_limit,
+                                         candle_period=candle_period, api_key=api_key, api_secret=api_secret,
+                                         testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
+                                         telegram_chat_id=telegram_chat_id, http_port=http_port)
 
-        self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id,
-                                               expire_time=600)
+        # 일반 메시지
+        self.telegram_bot.send("TelegramGo를 시작하였습니다.\n ")
 
     def update_orderbook(self, orderbook):
         pass
@@ -67,20 +67,26 @@ class AlertGo(Algo):
 
         order_qty = 10
         if score >= 2:
+            # 질문 메시지
             text = f'주문타입: <b>BUY</b>\n' \
                    f'가격: {df.Close[-1]}\n' \
                    f'수량: {order_qty}\n' \
-                   f'이유: {self.symbol} Too much buy! price[{price}] >= bbhigh[{high}] AND RSI[{rsi}] >= 60\n'
+                   f'이유: {self.symbol} Too much buy! price[{price}] >= bbhigh[{high}] AND RSI[{rsi}] >= 60\n'\
+                   f'<a href="https://www.bitmex.com/chartEmbed?symbol=XBTUSD">차트열기</a> \n' \
+                   f'<a href="https://www.bitmex.com/app/trade/XBTUSD">거래소열기</a> \n'
             self.telegram_bot.send_question(question_text=text,
                                             yes_name="BUY",
                                             yes_func=self.order,
                                             yes_param={"df": df, "qty": order_qty},
                                             no_name="CANCEL")
+
         elif score <= -2:
             text = f'주문타입: <b>SELL</b>\n' \
                    f'가격: {df.Close[-1]}\n' \
                    f'수량: {-order_qty}\n' \
-                   f'이유: {self.symbol} Too much sell! price[{price}] <= bblow[{low}] AND RSI[{rsi}] <= 40\n'
+                   f'이유: {self.symbol} Too much sell! price[{price}] <= bblow[{low}] AND RSI[{rsi}] <= 40\n' \
+                   f'<a href="https://www.bitmex.com/chartEmbed?symbol=XBTUSD">차트열기</a> \n' \
+                   f'<a href="https://www.bitmex.com/app/trade/XBTUSD">거래소열기</a> \n'
             self.telegram_bot.send_question(question_text=text,
                                             yes_name="SELL",
                                             yes_func=self.order,
@@ -94,15 +100,16 @@ class AlertGo(Algo):
         logger.info('update_position > %s', position)
 
     def order(self, param):
-        stop_limit_order = self.nexus.api.put_order(order_qty=param['df'].Close[-1],
-                                                    price=param['df'].Close[-1],
-                                                    stop_price=param['df'].Close[-1],
-                                                    type="Limit")
-        logger.info("주문결과: %s", stop_limit_order)
-        return stop_limit_order["ordStatus"]
+        # stop_limit_order = self.nexus.api.put_order(order_qty=param['df'].Close[-1],
+        #                                             price=param['df'].Close[-1],
+        #                                             stop_price=param['df'].Close[-1],
+        #                                             type="Market")
+        # logger.info("주문결과: %s", stop_limit_order)
+        # return f"시장가로 주문 요청합니다. 상태[{stop_limit_order['ordStatus']}]"
+        return f"시장가로 주문 요청합니다. 상태[Canceled]"
 
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    bot = AlertGo(params)
+    bot = TelegramGo(params)
     bot.run()

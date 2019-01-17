@@ -6,6 +6,7 @@ from datetime import datetime
 from aiohttp import web
 
 from futuremaker import utils
+from futuremaker.Telegram_bot_adapter import TelegramBotAdapter
 from futuremaker.bitmex.nexus import Nexus
 from futuremaker.log import logger
 
@@ -27,13 +28,12 @@ class Algo(object):
 
         self.symbol = symbol
         self.candle_period = candle_period
-        self.telegram_bot_token = telegram_bot_token
-        self.telegram_chat_id = telegram_chat_id
         self.http_port = http_port
         self.nexus = Nexus(symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
                            dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period,
                            update_orderbook=self.update_orderbook, update_candle=self.update_candle,
                            update_order=self.update_order, update_position=self.update_position)
+        self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
 
     async def init(self):
         """
@@ -147,8 +147,3 @@ class Algo(object):
 
     async def _get_orders(self):
         pass
-
-    def send_telegram(self, text):
-        if self.telegram_bot_token is not None and self.telegram_chat_id is not None:
-            coro = utils.send_telegram(self.telegram_bot_token, self.telegramchat_id, text)
-            asyncio.get_event_loop().create_task(coro)

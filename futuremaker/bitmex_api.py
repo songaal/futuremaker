@@ -52,6 +52,9 @@ class BitmexAPI(object):
                 result = self.client.Order.Order_new(symbol=self.symbol, ordType=type, orderQty=order_qty,
                                                      price=price, stopPx=stop_price,
                                                      execInst='ParticipateDoNotInitiate').result()
+            elif type == 'Market':
+                result = self.client.Order.Order_new(symbol=self.symbol, ordType=type, orderQty=order_qty,
+                                                     price=price).result()
 
             logger.debug('NEW ORDER > symbol[%s] Result > %s', self.symbol, result[0])
             order = result[0]
@@ -82,6 +85,9 @@ class BitmexAPI(object):
                 elif type == 'LimitIfTouched' or type == "StopLimit":
                     result = self.client.Order.Order_amend(orderID=order_id, orderQty=order_qty,
                                                            price=price, stopPx=stop_price).result()
+                elif type == 'Market':
+                    result = self.client.Order.Order_new(symbol=self.symbol, ordType=type, orderQty=order_qty,
+                                                         price=price).result()
                 logger.debug('AMEND ORDER > order_id[%s] symbol[%s] Result > %s', order_id, self.symbol, result[0])
                 order = result[0]
                 status = order['ordStatus']
