@@ -4,3 +4,7 @@
 *.log
 start.sh
 *.bak
+*egg-info*
+dist/
+build
+*.swp
