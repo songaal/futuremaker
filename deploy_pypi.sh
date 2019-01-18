@@ -1,9 +1,9 @@
 #! /bin/bash
 
 # remove
-#rm -rf dist
-#rm -rf build
-#rm -rf futuremaker.egg-info
+rm -rf dist
+rm -rf build
+rm -rf futuremaker.egg-info
 #sleep 1
 
 # wheel

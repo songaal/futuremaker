@@ -6,7 +6,7 @@ from datetime import datetime
 from aiohttp import web
 
 from futuremaker import utils
-from futuremaker.Telegram_bot_adapter import TelegramBotAdapter
+from futuremaker.telegram_bot_adapter import TelegramBotAdapter
 from futuremaker.bitmex.nexus import Nexus
 from futuremaker.log import logger
 
