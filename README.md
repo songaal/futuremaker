@@ -1,6 +1,8 @@
 # Futuremaker
 
-Futuremaker is a progressive cryptocurrency algorithm trading library based on Python. It's [MIT licensed](https://opensource.org/licenses/MIT)!
+Futuremaker is a progressive cryptocurrency algorithm trading library based on Python. It's [MIT licensed](https://opensource.org/licenses/MIT).
+
+Check [latest version](https://pypi.org/project/futuremaker/) at pypi. 
 
 
 ## Supported Exchanges
@@ -40,7 +42,6 @@ $ python algo.py
 
 * Algorithm tutorial (#TBD)
 * Documentation (#TBD)
-* Pypi - https://pypi.org/project/futuremaker/
 
 ## Contribute
 If you've found a bug, let me know. If you would like to participate in the development together, please email hello@systom.io at any time.
