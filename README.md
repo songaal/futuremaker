@@ -5,12 +5,12 @@ Futuremaker is a progressive cryptocurrency algorithm trading library based on P
 
 ## Supported Exchanges
 
-* BitMex
+* [BitMex](https://www.bitmex.com/)
 
 Belows are comming soon..
-* Binance
-* Bithumb
-* Upbit
+* [Binance](https://www.binance.com/)
+* [Bithumb](https://www.bithumb.com/)
+* [Upbit](https://upbit.com/)
 
 ## Futuremaker is Fun
 
