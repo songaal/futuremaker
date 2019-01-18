@@ -6,7 +6,7 @@ import os
 format = '[%(asctime)s %(levelname)s] (%(filename)s:%(lineno)d) %(message)s'
 formatter = logging.Formatter(format)
 
-logging.basicConfig(format=format, level=os.environ.get('LOGLEVEL', 'DEBUG'))
+logging.basicConfig(format=format, level=os.environ.get('LOGLEVEL', 'INFO'))
 
 # Name the logger after the package.
 logger = logging.getLogger(__package__)

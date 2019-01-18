@@ -19,7 +19,7 @@ class Algo(object):
     nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
     """
 
-    def __init__(self, symbol, leverage, candle_limit=None, candle_period=None, api_key=None, api_secret=None,
+    def __init__(self, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
                  testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None):
         if not symbol:
             raise Exception('Symbol must be set.')

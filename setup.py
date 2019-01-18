@@ -7,7 +7,7 @@ setup_requires = []
 
 install_requires = [
     'bitmex',
-    'websockets',
+    'websocket-client',
     'aiohttp',
     'asyncio',
     'pandas',
@@ -19,7 +19,7 @@ dependency_links = []
 
 setup(
     name="futuremaker",
-    version="0.0.3",
+    version="0.0.5",
     author="SongSangWook",
     author_email="swsong@gncloud.kr",
     description="Cryptocurrency trading library",
