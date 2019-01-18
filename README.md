@@ -1,4 +1,4 @@
-# futuremaker
+# Futuremaker
 
 Algorithm Trading Bot Library
 
