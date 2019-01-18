@@ -1,6 +1,7 @@
 # Futuremaker
 
-Algorithm Trading Bot Library
+Futuremaker is a progressive cryptocurrency algorithm trading library based on Python. It's [MIT licensed](https://opensource.org/licenses/MIT)!
+
 
 ## Supported Exchanges
 
