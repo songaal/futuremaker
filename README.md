@@ -39,6 +39,7 @@ $ python algo.py
 
 * Algorithm tutorial (#TBD)
 * Documentation (#TBD)
+* Pypi - https://pypi.org/project/futuremaker/
 
 ## Contribute
 If you've found a bug, let me know. If you would like to participate in the development together, please email hello@systom.io at any time.
