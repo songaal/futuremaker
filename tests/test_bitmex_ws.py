@@ -13,8 +13,8 @@ class TestBitmexWS(unittest.TestCase):
 
     def setUp(self):
         #testnet songaal
-        self.api_key = '3LSvj8cCGuAC8LW7r3BG6uJc'
-        self.api_secret = '_3nHUdZDGXEttyXivo8rX17qSE_20Qlec1fnalvz-7EF228b'
+        self.api_key = '<api_key>'
+        self.api_secret = '<api_secret>'
 
     def test_run(self):
         self.margin = None
