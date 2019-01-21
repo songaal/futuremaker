@@ -10,8 +10,8 @@ from futuremaker.nexus import Nexus
 class TestNexus(unittest.TestCase):
     def setUp(self):
         # testnet songaal
-        api_key = '3LSvj8cCGuAC8LW7r3BG6uJc'
-        api_secret = '_3nHUdZDGXEttyXivo8rX17qSE_20Qlec1fnalvz-7EF228b'
+        api_key = '<api_key>'
+        api_secret = '<api_secret>'
         testnet = True
         symbol = 'XBTUSD'
         leverage = 1
