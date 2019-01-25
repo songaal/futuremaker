@@ -1,6 +1,6 @@
-from futuremaker.bitmex.algo import Algo
+from futuremaker.bitmex.bot import Bot
 
-class AlertGo(Algo):
+class AlertGo(Bot):
 
     def __init__(self):
         super(AlertGo, self).__init__(symbol="XBTUSD", candle_limit=20, candle_period="1m")

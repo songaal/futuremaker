@@ -2,14 +2,14 @@ import os
 import sys
 
 from futuremaker import indicators, utils
-from futuremaker.bitmex.algo import Algo
+from futuremaker.bitmex.bot import Bot
 from futuremaker.log import logger
 import talib as ta
 
 VERSION='1.0.0'
 
 
-class TelegramGo(Algo):
+class TelegramGo(Bot):
 
     def __init__(self, params):
         symbol = params['symbol']

@@ -1,30 +1,27 @@
 import os
 import unittest
-
-import bitmex
+from datetime import datetime
 
 from futuremaker import utils
-from futuremaker.bitmex.nexus import Nexus
+from futuremaker.nexus_mock import Nexus
 
 
-class TestNexus(unittest.TestCase):
+class TestNexusMock(unittest.TestCase):
     def setUp(self):
-        # testnet songaal
-        api_key = '<api_key>'
-        api_secret = '<api_secret>'
-        testnet = True
         symbol = 'XBTUSD'
         leverage = 1
         candle_limit = 20
         candle_period = '1m'
-        self.nexus = Nexus(symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet, candle_limit=candle_limit, candle_period=candle_period)
+        self.nexus = Nexus('bitmex', symbol, leverage=leverage, candle_limit=candle_limit, candle_period=candle_period,
+                           test_start=datetime(2019,1,24,9,0,0), test_end=datetime(2019,1,24,13,0,0))
 
     def test_update_candle(self):
-        def handle_signal(data):
-            print(data)
+        def handle_signal(df, item):
+            print(item)
 
-        self.nexus.update_candle = handle_signal
+        self.nexus.callback(update_candle=handle_signal)
         utils.test_async(self.nexus.load())
+        utils.test_async(self.nexus.start_timer())
 
     def test_update_position(self):
         def update_position(data):

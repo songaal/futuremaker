@@ -8,10 +8,11 @@ from aiohttp import web
 from futuremaker import utils
 from futuremaker.telegram_bot_adapter import TelegramBotAdapter
 from futuremaker.bitmex.nexus import Nexus
+from futuremaker import nexus_mock
 from futuremaker.log import logger
 
 
-class Algo(object):
+class Bot(object):
     """
     봇 알고리즘.
     nexus 객체를 가지고 있으며 다음과 같이 사용가능하다.
@@ -20,7 +21,8 @@ class Algo(object):
     """
 
     def __init__(self, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
-                 testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None):
+                 testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None,
+                 backtest=False):
         if not symbol:
             raise Exception('Symbol must be set.')
         if not candle_period:
@@ -29,11 +31,13 @@ class Algo(object):
         self.symbol = symbol
         self.candle_period = candle_period
         self.http_port = http_port
-        self.nexus = Nexus(symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
-                           dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period,
-                           update_orderbook=self.update_orderbook, update_candle=self.update_candle,
-                           update_order=self.update_order, update_position=self.update_position)
-        self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
+        if not backtest:
+            self.nexus = Nexus(symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
+                               dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
+            # self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id,
+            #                                        expire_time=600)
+        else:
+            self.nexus = nexus_mock.Nexus()
 
     async def init(self):
         """
@@ -53,57 +57,12 @@ class Algo(object):
         """
         pass
 
-    def update_orderbook(self, orderbook):
-        """
-        orderbook이 업데이트되어 들어온다.
-        {
-            'symbol': 'XBTUSD',
-            'timestamp': '2019-01-12T08: 07: 23.150Z',
-            'bids': [
-                [
-                    3609.5,
-                    1070
-                ],
-                ....
-            ],
-            'asks': [
-                [
-                    3610,
-                    813
-                ],
-                ....
-            ]
-        }
-        :return:
-        """
-        pass
+    def run(self, algo):
+        self.nexus.callback(update_orderbook=algo.update_orderbook,
+                            update_candle=algo.update_candle,
+                            update_order=algo.update_order,
+                            update_position=algo.update_position)
 
-    def update_candle(self, df, candle):
-        """
-        캔들이 업데이트되어 dict가 들어온다.
-        :param df: pandas.DataFrame
-        :param candle: dict
-        :return:
-        """
-        pass
-
-    def update_order(self, order):
-        """
-        업데이트된 order 가 들어온다. nexus['order']['<orderID'] 로도 접근가능.
-        :param order:
-        :return:
-        """
-        pass
-
-    def update_position(self, position):
-        """
-        업데이트된 position 이 들어온다. nexus['position'] 으로 접근한 객체와 동일하다.
-        :param position:
-        :return:
-        """
-        pass
-
-    def run(self):
         loop = asyncio.get_event_loop()
         try:
             logger.info('SYMBOL: %s', self.symbol)

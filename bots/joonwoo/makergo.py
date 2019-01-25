@@ -5,11 +5,11 @@ import datetime
 from ccxt import ExchangeError
 
 from futuremaker import indicators, utils
-from futuremaker.bitmex.algo import Algo
+from futuremaker.bitmex.bot import Bot
 from futuremaker.log import logger
 
 
-class AlertGo(Algo):
+class AlertGo(Bot):
 
     def __init__(self, params):
         symbol = 'XBTUSD'

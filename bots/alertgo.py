@@ -2,7 +2,8 @@ import os
 import sys
 
 from futuremaker import indicators, utils
-from futuremaker.bitmex.algo import Algo
+from futuremaker.algo import Algo
+from futuremaker.bitmex.bot import Bot
 from futuremaker.log import logger
 import talib as ta
 
@@ -11,25 +12,8 @@ VERSION='1.0.0'
 
 class AlertGo(Algo):
 
-    def __init__(self, params):
-        symbol = params['symbol']
-        candle_period = params['candle_period']
-        http_port = params['http_port']
-        leverage = 1
-        candle_limit = 20
-        api_key = os.getenv('API_KEY')
-        api_secret = os.getenv('API_SECRET')
-        telegram_bot_token =os.getenv('TELEGRAM_BOT_TOKEN')
-        telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
-        testnet = os.getenv('TESTNET') == 'True'
-        dry_run = os.getenv('DRY_RUN') == 'True'
-        super(AlertGo, self).__init__(symbol=symbol, leverage=leverage, candle_limit=candle_limit,
-                                      candle_period=candle_period, api_key=api_key, api_secret=api_secret,
-                                      testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
-                                      telegram_chat_id=telegram_chat_id, http_port=http_port)
-
-    def update_orderbook(self, orderbook):
-        pass
+    def __init__(self, params=None):
+        logger.info('%s created!', self.__class__.__name__)
 
     def update_candle(self, df, candle):
         logger.info('update_candle %s > %s : %s', df.index[-1], df.iloc[-1], candle)
@@ -75,5 +59,27 @@ class AlertGo(Algo):
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    bot = AlertGo(params)
-    bot.run()
+    symbol = params['symbol']
+    candle_period = params['candle_period']
+    http_port = params['http_port']
+    test_start = params['test_start']
+    test_end = params['test_end']
+    leverage = 1
+    candle_limit = 20
+    api_key = os.getenv('API_KEY')
+    api_secret = os.getenv('API_SECRET')
+    telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
+    testnet = os.getenv('TESTNET') == 'True'
+    dry_run = os.getenv('DRY_RUN') == 'True'
+
+    if test_start and test_end:
+        bot = TestBot()
+    else:
+        bot = Bot(symbol=symbol, leverage=leverage, candle_limit=candle_limit,
+                   candle_period=candle_period, api_key=api_key, api_secret=api_secret,
+                   testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
+                   telegram_chat_id=telegram_chat_id, http_port=http_port)
+
+    algo = AlertGo(params)
+    bot.run(algo)

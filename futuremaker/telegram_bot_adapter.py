@@ -4,7 +4,7 @@ import random
 import time
 
 import aiohttp
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+# from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
 from futuremaker.collections import expiredict
 from futuremaker.log import logger

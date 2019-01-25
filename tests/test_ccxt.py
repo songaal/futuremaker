@@ -2,14 +2,14 @@ import asyncio
 import unittest
 from datetime import datetime
 
-from backtester import data_ingest
-from backtester import utils as backtester_utils
+from futuremaker import data_ingest
+from futuremaker import utils as backtester_utils
 from futuremaker.log import logger
 
 
 class TestCcxt(unittest.TestCase):
 
-    def test_bitmex_ohlcv(self):
+    def test_bitmex_data_ingest(self):
         exchange = backtester_utils.ccxt_exchange('bitmex', async=True)
         markets = asyncio.get_event_loop().run_until_complete(exchange.load_markets())
         #exchange, symbols, start_date, end_date, periods
