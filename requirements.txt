@@ -1,7 +1,6 @@
 bitmex
 websockets
-asyncio
 aiohttp
 pandas
 pytz
-python-telegram-bot
+telegram

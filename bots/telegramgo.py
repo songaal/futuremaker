@@ -2,7 +2,6 @@ import os
 import sys
 
 from futuremaker import indicators, utils
-from futuremaker.telegram_bot_adapter import TelegramBotAdapter
 from futuremaker.bitmex.algo import Algo
 from futuremaker.log import logger
 import talib as ta
