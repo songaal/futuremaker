@@ -71,7 +71,6 @@ class AlertGo(Algo):
 
     def update_position(self, position):
         logger.info('update_position > %s', position)
-        self.nexus.api.put_order()
 
 
 if __name__ == '__main__':
