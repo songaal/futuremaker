@@ -1,15 +1,16 @@
 import pandas as pd
 
 from futuremaker import utils, data_ingest
+from futuremaker.log import logger
 
 
 class Nexus(object):
 
-    def __init__(self, exchange_id, symbol, leverage, candle_limit, candle_period, test_start, test_end):
+    def __init__(self, exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end):
         self.candle_handler = None
         self.symbol = symbol
         self.leverage = leverage
-        self.api = utils.ccxt_exchange(exchange_id, async=True)
+        self.api = utils.ccxt_exchange(exchange, async=True)
 
         self.candle_limit = candle_limit
         self.candle_period = candle_period
@@ -29,6 +30,13 @@ class Nexus(object):
             self.cb_update_candle(candle_df, candle_df.iloc[-1])
             return candle_df
 
+    async def start(self):
+        logger.info('Backtest start timer!')
+        while True:
+            df = self._update_candle()
+            if df is None:
+                break
+
     async def load(self):
         try:
             await self.api.load_markets()
@@ -42,12 +50,6 @@ class Nexus(object):
 
     async def wait_ready(self):
         pass
-
-    async def start_timer(self):
-        while True:
-            df = self._update_candle()
-            if df is None:
-                break
 
     def __getitem__(self, item):
         return None

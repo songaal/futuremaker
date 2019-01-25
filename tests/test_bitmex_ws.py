@@ -13,8 +13,8 @@ class TestBitmexWS(unittest.TestCase):
 
     def setUp(self):
         #testnet songaal
-        self.api_key = '<api_key>'
-        self.api_secret = '<api_secret>'
+        self.api_key = None
+        self.api_secret = None
 
     def test_run(self):
         self.margin = None
@@ -85,9 +85,10 @@ class TestBitmexWS(unittest.TestCase):
             """
             # req = {'op': 'subscribe', 'args': ['tradeBin1m:XBTUSD', 'order', 'margin', 'position', 'wallet']}
             # req = {'op': 'subscribe', 'args': ['margin', 'position:XBTUSD', 'quote:XBTUSD', 'orderBook10:XBTUSD']}
-            req = {'op': 'subscribe', 'args': ['order:XBTUSD', 'position:XBTUSD', 'wallet']}
-
-            await ws.listen('XBTUSD', handle_topic)
+            # req = {'op': 'subscribe', 'args': ['order:XBTUSD', 'position:XBTUSD', 'wallet']}
+            req = {'op': 'subscribe', 'args': ['orderBook10:XBTUSD']}
+            ws.update_orderbook = lambda x: print(x)
+            await ws.listen()
 
         utils.test_async(run())
 

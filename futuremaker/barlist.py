@@ -1,5 +1,7 @@
 import pandas as pd
 
+from futuremaker.log import logger
+
 
 class BarList:
     def __init__(self, symbol, history, freq='T'):
@@ -9,8 +11,9 @@ class BarList:
         self.df = None
 
     def init(self, index_list, data_list):
-        dates = pd.DatetimeIndex(index_list, dtype='datetime64[ns]', freq=self.freq)
-        self.df = pd.DataFrame(data=data_list, index=dates, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
+        logger.debug('>> index_list >> %s', index_list)
+        # dates = pd.DatetimeIndex(index_list, dtype='datetime64[ns]', freq=self.freq)
+        self.df = pd.DataFrame(data=data_list, index=index_list, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
 
     def update(self, datetime, open, high, low, close, volume, unit='s'):
         # index = pd.to_datetime(datetime, unit=unit)

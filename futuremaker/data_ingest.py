@@ -1,5 +1,4 @@
 import csv
-import json
 import os
 import re
 import tempfile
@@ -80,7 +79,7 @@ async def ingest_data(exchange, symbol, start_date, end_date, interval, history)
             '{:.8f}'.format(candle[4]),
             '{:.2f}'.format(candle[5]),
         ])
-    wr.close()
+    f.close()
 
     timer_end = timeit.default_timer()
     logger.debug('# {} Downloaded CandleFile. elapsed: {}'.format(symbol, str(timer_end - timer_start)))
@@ -89,9 +88,7 @@ async def ingest_data(exchange, symbol, start_date, end_date, interval, history)
 
 async def fetch_ohlcv(exchange, symbol, interval, since, limit):
     if exchange.has['fetchOHLCV']:
-        if symbol in exchange.markets_by_id:
-            market = exchange.markets_by_id[symbol]
-            symbol = market['symbol']
+        if symbol in exchange.markets:
             time.sleep(exchange.rateLimit / 1000)  # time.sleep wants seconds
             return await exchange.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit)
 

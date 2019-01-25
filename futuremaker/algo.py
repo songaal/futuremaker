@@ -51,3 +51,6 @@ class Algo(object):
         :return:
         """
         pass
+
+    def send_telegram(self, text):
+        pass

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import unittest
 from datetime import datetime
@@ -8,7 +9,7 @@ from futuremaker.nexus_mock import Nexus
 
 class TestNexusMock(unittest.TestCase):
     def setUp(self):
-        symbol = 'XBTUSD'
+        symbol = 'XBT/USD'
         leverage = 1
         candle_limit = 20
         candle_period = '1m'
@@ -20,8 +21,8 @@ class TestNexusMock(unittest.TestCase):
             print(item)
 
         self.nexus.callback(update_candle=handle_signal)
-        utils.test_async(self.nexus.load())
-        utils.test_async(self.nexus.start_timer())
+        asyncio.get_event_loop().run_until_complete(self.nexus.load())
+        asyncio.get_event_loop().run_until_complete(self.nexus.start())
 
     def test_update_position(self):
         def update_position(data):

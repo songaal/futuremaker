@@ -20,9 +20,9 @@ class Bot(object):
     nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
     """
 
-    def __init__(self, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
+    def __init__(self, exchange, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
                  testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None,
-                 backtest=False):
+                 backtest=False, test_start=None, test_end=None):
         if not symbol:
             raise Exception('Symbol must be set.')
         if not candle_period:
@@ -31,13 +31,14 @@ class Bot(object):
         self.symbol = symbol
         self.candle_period = candle_period
         self.http_port = http_port
-        if not backtest:
-            self.nexus = Nexus(symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
+        self.backtest = backtest
+        if not self.backtest:
+            self.nexus = Nexus(exchange, symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
             # self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id,
             #                                        expire_time=600)
         else:
-            self.nexus = nexus_mock.Nexus()
+            self.nexus = nexus_mock.Nexus(exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end)
 
     async def init(self):
         """
@@ -46,6 +47,7 @@ class Bot(object):
         """
         try:
             await self.nexus.wait_ready()
+            logger.info('Wait_ready is done!!!')
         except Exception as e:
             logger.error('init error > %s', e)
             utils.print_traceback()
@@ -73,12 +75,15 @@ class Bot(object):
             logger.info('LOGLEVEL: %s', os.getenv("LOGLEVEL"))
             logger.info('TZNAME: %s', time.tzname)
             logger.info('Loading...')
-            nexus_load = loop.create_task(self.nexus.load())
+            loop.run_until_complete(self.nexus.load())
+            nexus_start = loop.create_task(self.nexus.start())
             loop.run_until_complete(self.init())
-            scheduled_task = loop.create_task(self.schedule())
-            if self.http_port:
+            # scheduled_task = loop.create_task(self.schedule())
+            if self.http_port and not self.backtest:
                 server_task = loop.create_task(self._run_server())
-            loop.run_forever()
+            async def go():
+                await nexus_start
+            loop.run_until_complete(go())
         except KeyboardInterrupt:
             pass
         finally:
