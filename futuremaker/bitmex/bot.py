@@ -47,7 +47,6 @@ class Bot(object):
         """
         try:
             await self.nexus.wait_ready()
-            logger.info('Wait_ready is done!!!')
         except Exception as e:
             logger.error('init error > %s', e)
             utils.print_traceback()
@@ -78,7 +77,7 @@ class Bot(object):
             loop.run_until_complete(self.nexus.load())
             nexus_start = loop.create_task(self.nexus.start())
             loop.run_until_complete(self.init())
-            # scheduled_task = loop.create_task(self.schedule())
+            scheduled_task = loop.create_task(self.schedule())
             if self.http_port and not self.backtest:
                 server_task = loop.create_task(self._run_server())
             async def go():

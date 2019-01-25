@@ -19,6 +19,8 @@ class AlertGo(Algo):
 
     def update_candle(self, df, candle):
         # logger.info('update_candle %s > %s : %s', df.index[-1], df.iloc[-1], candle)
+        logger.info('>> %s >> %s', datetime.fromtimestamp(df.index[-1] / 1000),
+                    f'O:{candle.Open} H:{candle.High} L:{candle.Low} C:{candle.Close} V:{candle.Volume}')
         price = df.Close.iloc[-1]
         m, u, l = indicators.bollinger_bands(df.Close, n=20, stdev=1.5)
 
