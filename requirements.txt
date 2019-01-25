@@ -4,3 +4,4 @@ aiohttp
 pandas
 pytz
 telegram
+ccxt
