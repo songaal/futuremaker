@@ -38,21 +38,23 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history, relo
     # 나누어 받을때 다음번 루프의 시작시점이 된다.
     next_delta = 0
     if interval_unit == 'm':
-        length = delta.days * 24 * 60 + delta.seconds // 60
+        length = (delta.days * 24 * 60 + delta.seconds // 60) / interval_num
         next_delta = timedelta(minutes=interval_num).total_seconds()
     elif interval_unit == 'h':
-        length = delta.days * 24 + delta.seconds // 3600
+        length = (delta.days * 24 + delta.seconds // 3600) / interval_num
         next_delta = timedelta(hours=interval_num).total_seconds()
     elif interval_unit == 'd':
-        length = delta.days
+        length = (delta.days) / interval_num
         next_delta = timedelta(days=interval_num).total_seconds()
 
     since = int(prepare_date.timestamp()) * 1000
     logger.info('Ingest time range: %s ~ %s', prepare_date, end_date)
-    logger.info('Ingest candle length[%s] of [%s]', length, interval_unit)
+    logger.info('Ingest candle length[%s] of [%s] since[%s]', length, interval_unit, since)
 
+    params = None
     if api.id == 'bitmex':
         max_limit = 750
+        # params = { 'partial': 'true' }
     elif api.id == 'binance':
         max_limit = 1000
 
@@ -68,14 +70,15 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history, relo
 
             limit = min(length, max_limit)
             logger.debug('#### fetch_ohlcv request [%s / %s]', limit, length)
-            candles = await fetch_ohlcv(api, symbol, interval, since, limit)
+            candles = await fetch_ohlcv(api, symbol, interval, since, limit, params)
             # 읽은 갯수만큼 빼준다.
             length -= limit
             logger.debug('#### fetch_ohlcv remnant [%s]', length)
             logger.debug('#### fetch_ohlcv response [%s] >> \n%s', len(candles), candles)
 
             if len(candles) == 0:
-                raise ValueError('[FAIL] candle data row 0')
+                logger.warn('candle data rows are empty!')
+                break
 
             last_candle = None
             for candle in candles:
@@ -100,10 +103,10 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history, relo
     return base_dir, filepath
 
 
-async def fetch_ohlcv(api, symbol, interval, since, limit):
+async def fetch_ohlcv(api, symbol, interval, since, limit, params=None):
     if api.has['fetchOHLCV']:
         if symbol in api.markets:
-            return await api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit)
+            return await api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit, params=params)
 
 
 def split_interval(time_interval):

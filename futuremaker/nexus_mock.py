@@ -42,7 +42,7 @@ class Nexus(object):
             await self.api.load_markets()
 
             _, filepath = await data_ingest.ingest_data(self.api, self.symbol, self.test_start, self.test_end,
-                                                        self.candle_period, self.candle_limit)
+                                                        self.candle_period, self.candle_limit, reload=True)
             self.candle_handler = CandleHandler(filepath, self.candle_limit)
             self.candle_handler.load()
         except:

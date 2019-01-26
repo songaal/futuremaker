@@ -54,6 +54,8 @@ class AlertGo(Algo):
         elif score <= -2:
             self.send_telegram(f'{self.symbol} Too much sell! price[{price}] <= bblow[{low}] AND RSI[{rsi}] <= 40')
 
+        sys.exit(0)
+
     def update_order(self, order):
         logger.info('update_order > %s', order)
 
@@ -71,9 +73,9 @@ if __name__ == '__main__':
     test_start = params['test_start']
     test_end = params['test_end']
     if test_start:
-        test_start = datetime.strptime(test_start, '%Y-%m-%d %H:%M:%S')
+        test_start = datetime.strptime(test_start, '%Y-%m-%d %H:%M:%S%z')
     if test_end:
-        test_end = datetime.strptime(test_end, '%Y-%m-%d %H:%M:%S')
+        test_end = datetime.strptime(test_end, '%Y-%m-%d %H:%M:%S%z')
     leverage = 1
     candle_limit = 20
     api_key = os.getenv('API_KEY')
