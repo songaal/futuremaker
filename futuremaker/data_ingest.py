@@ -38,13 +38,13 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history, relo
     # 나누어 받을때 다음번 루프의 시작시점이 된다.
     next_delta = 0
     if interval_unit == 'm':
-        length = (delta.days * 24 * 60 + delta.seconds // 60) / interval_num
+        length = (delta.days * 24 * 60 + delta.seconds // 60) // interval_num
         next_delta = timedelta(minutes=interval_num).total_seconds()
     elif interval_unit == 'h':
-        length = (delta.days * 24 + delta.seconds // 3600) / interval_num
+        length = (delta.days * 24 + delta.seconds // 3600) // interval_num
         next_delta = timedelta(hours=interval_num).total_seconds()
     elif interval_unit == 'd':
-        length = (delta.days) / interval_num
+        length = (delta.days) // interval_num
         next_delta = timedelta(days=interval_num).total_seconds()
 
     since = int(prepare_date.timestamp()) * 1000
