@@ -9,19 +9,7 @@ from datetime import datetime, timedelta
 from futuremaker.log import logger
 
 
-# async def ingest_data(exchange, symbol, start_date, end_date, periods):
-#     base_dir = None
-#     period_pairs = list(map(lambda x: x.strip(), periods.split(',')))
-#     if symbol:
-#         for pair in period_pairs:
-#             pairs = pair.split(':')
-#             interval, history = pairs[0], int(pairs[1])
-#             base_dir = await _ingest_one_data(exchange, symbol, start_date, end_date, interval, history)
-#
-#     return base_dir
-
-
-async def ingest_data(exchange, symbol, start_date, end_date, interval, history):
+async def ingest_data(api, symbol, start_date, end_date, interval, history, reload=False):
     """
     데이터를 받아서 csv파일로 저장한다.
     만약 파일이 존재한다면 스킵한다.
@@ -37,60 +25,85 @@ async def ingest_data(exchange, symbol, start_date, end_date, interval, history)
     interval = interval.lower()
     interval_unit = interval_unit.lower()
 
-    if interval_unit in ['w', 'd', 'h']:
-        # 주, 일, 시 단위
-        resolution = interval_unit if interval_num == '1' else interval
-    elif interval_unit in ['m']:
-        # 분 단위
-        resolution = interval_num
-
-    base_dir, filepath = ingest_filepath(dir, exchange, symbol, start_date, end_date, interval, history)
+    base_dir, filepath = ingest_filepath(dir, api, symbol, start_date, end_date, interval, history)
 
     logger.debug('file_path=%s', filepath)
-    if os.path.exists(filepath):
+    # 강제 리로드 요청이 없고, 파일이 존재하고, 사이즈도 0보다 크면, 그냥 사용.
+    if not reload and os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         logger.debug('# [{}] CandleFile Download Passed. {}'.format(symbol, filepath))
         return base_dir, filepath
 
     prepare_date = get_prepare_date(start_date, interval, history)
+    delta = (end_date - prepare_date)
+    # 나누어 받을때 다음번 루프의 시작시점이 된다.
+    next_delta = 0
+    if interval_unit == 'm':
+        length = delta.days * 24 * 60 + delta.seconds // 60
+        next_delta = timedelta(minutes=interval_num).total_seconds()
+    elif interval_unit == 'h':
+        length = delta.days * 24 + delta.seconds // 3600
+        next_delta = timedelta(hours=interval_num).total_seconds()
+    elif interval_unit == 'd':
+        length = delta.days
+        next_delta = timedelta(days=interval_num).total_seconds()
+
     since = int(prepare_date.timestamp()) * 1000
-    logger.debug('Ingest time range: %s ~ %s', prepare_date, end_date)
+    logger.info('Ingest time range: %s ~ %s', prepare_date, end_date)
+    logger.info('Ingest candle length[%s] of [%s]', length, interval_unit)
 
-    ##FIXME
-    limit = 750
+    if api.id == 'bitmex':
+        max_limit = 750
+    elif api.id == 'binance':
+        max_limit = 1000
 
-    candles = await fetch_ohlcv(exchange, symbol, interval, since, limit)
+    with open(filepath, 'w', encoding='utf-8', newline='') as f:
 
-    logger.debug('#### fetch_ohlcv response [%s] >> \n%s', len(candles), candles)
+        wr = csv.writer(f)
+        wr.writerow(['Datetime', 'Index', 'Open', 'High', 'Low', 'Close', 'Volume'])
 
-    f = open(filepath, 'w', encoding='utf-8', newline='')
-    wr = csv.writer(f)
+        seq = 0
+        while length > 0:
+            if seq > 0:
+                time.sleep(api.rateLimit / 1000)  # time.sleep wants seconds
 
-    if len(candles) == 0:
-        raise ValueError('[FAIL] candle data row 0')
+            limit = min(length, max_limit)
+            logger.debug('#### fetch_ohlcv request [%s / %s]', limit, length)
+            candles = await fetch_ohlcv(api, symbol, interval, since, limit)
+            # 읽은 갯수만큼 빼준다.
+            length -= limit
+            logger.debug('#### fetch_ohlcv remnant [%s]', length)
+            logger.debug('#### fetch_ohlcv response [%s] >> \n%s', len(candles), candles)
 
-    wr.writerow(['Datetime', 'Index', 'Open', 'High', 'Low', 'Close', 'Volume'])
-    for candle in candles:
-        wr.writerow([
-            datetime.fromtimestamp(int(candle[0]/1000), tz=tz).strftime('%Y-%m-%d %H:%M:%S'),
-            int(candle[0]),
-            '{:.8f}'.format(candle[1]),
-            '{:.8f}'.format(candle[2]),
-            '{:.8f}'.format(candle[3]),
-            '{:.8f}'.format(candle[4]),
-            '{:.2f}'.format(candle[5]),
-        ])
-    f.close()
+            if len(candles) == 0:
+                raise ValueError('[FAIL] candle data row 0')
+
+            last_candle = None
+            for candle in candles:
+                wr.writerow([
+                    datetime.fromtimestamp(int(candle[0]/1000), tz=tz).strftime('%Y-%m-%d %H:%M:%S'),
+                    int(candle[0]),
+                    '{:.8f}'.format(candle[1]),
+                    '{:.8f}'.format(candle[2]),
+                    '{:.8f}'.format(candle[3]),
+                    '{:.8f}'.format(candle[4]),
+                    '{:.2f}'.format(candle[5]),
+                ])
+                last_candle = candle
+
+            # 다음번 루프는 마지막 캔들부터 이어서 내려받는다.
+            logger.debug('>>> last_candle >>> %s', last_candle)
+            since = last_candle[0] + next_delta
+            seq += 1
 
     timer_end = timeit.default_timer()
     logger.debug('# {} Downloaded CandleFile. elapsed: {}'.format(symbol, str(timer_end - timer_start)))
     return base_dir, filepath
 
 
-async def fetch_ohlcv(exchange, symbol, interval, since, limit):
-    if exchange.has['fetchOHLCV']:
-        if symbol in exchange.markets:
-            time.sleep(exchange.rateLimit / 1000)  # time.sleep wants seconds
-            return await exchange.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit)
+async def fetch_ohlcv(api, symbol, interval, since, limit):
+    if api.has['fetchOHLCV']:
+        if symbol in api.markets:
+            return await api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit)
 
 
 def split_interval(time_interval):
