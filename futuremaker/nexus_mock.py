@@ -31,6 +31,10 @@ class Nexus(object):
             return candle_df
 
     async def start(self):
+        if not self.candle_handler:
+            logger.error('Nexus mock is not loaded yet!')
+            return
+
         logger.info('Backtest start timer!')
         while True:
             df = self._update_candle()

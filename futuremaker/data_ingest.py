@@ -51,7 +51,7 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history, relo
     logger.info('Ingest time range: %s ~ %s', prepare_date, end_date)
     logger.info('Ingest candle length[%s] of [%s] since[%s]', length, interval_unit, since)
 
-    params = None
+    params = {}
     if api.id == 'bitmex':
         max_limit = 750
         # params = { 'partial': 'true' }
@@ -154,8 +154,8 @@ def ingest_filepath(root_dir, exchange, symbol, start_date, end_date, period, hi
     filename = ingest_filename(symbol, period, history)
     base_dir = '{}/{}/{}-{}'.format(root_dir,
                                      exchange.id,
-                                     start_date.strftime('%Y%m%d%H%M%Z'),
-                                     end_date.strftime('%Y%m%d%H%M%Z')
+                                     start_date.strftime('%Y%m%d%H%M%z'),
+                                     end_date.strftime('%Y%m%d%H%M%z')
                                      )
     try:
         os.makedirs(base_dir, exist_ok=True)
