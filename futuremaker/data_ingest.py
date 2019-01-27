@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from futuremaker.log import logger
 
 
-async def ingest_data(api, symbol, start_date, end_date, interval, history, reload=False):
+async def ingest_data(api, symbol, start_date, end_date, interval, history=0, reload=False):
     """
     데이터를 받아서 csv파일로 저장한다.
     만약 파일이 존재한다면 스킵한다.

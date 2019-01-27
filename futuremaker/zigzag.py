@@ -55,7 +55,7 @@ def zigzag(df, deviation=0.70):
     return pd.Series(zz_price, index=zz_index)
 
 
-def zigzag2(df, deviation=0.05, spread=0.5):
+def zigzag2(df, deviation=0.05, spread=1):
     upper_target = 1 + deviation / 100
     down_target = 1 - deviation / 100
 
