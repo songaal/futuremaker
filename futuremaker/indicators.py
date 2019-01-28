@@ -25,26 +25,28 @@ def compare_in_a_row(list, comp=lambda x: x < 0):
 
 
 def heikinashi(df):
-    df['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
+    heikin = pd.DataFrame()
+    heikin['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
 
-    idx = df.index.name
+    idx = heikin.index.name
     df.reset_index(inplace=True)
+    heikin.reset_index(inplace=True)
 
     for i in range(0, len(df)):
         if i == 0:
-            df.at[i, 'HA_Open'] = (df.at[i, 'Open'] + df.at[i, 'Close']) / 2
+            heikin.at[i, 'HA_Open'] = (df.at[i, 'Open'] + df.at[i, 'Close']) / 2
         else:
-            df.at[i, 'HA_Open'] = (df.at[i - 1, 'HA_Open'] + df.at[i - 1, 'HA_Close']) / 2
-
-        df.at[i, 'HA_Diff'] = df.at[i, 'HA_Close'] - df.at[i, 'HA_Open']
+            heikin.at[i, 'HA_Open'] = (heikin.at[i - 1, 'HA_Open'] + heikin.at[i - 1, 'HA_Close']) / 2
+            heikin.at[i, 'HA_Diff'] = heikin.at[i, 'HA_Close'] - heikin.at[i, 'HA_Open']
 
     if idx:
         df.set_index(idx, inplace=True)
+        heikin.set_index(idx, inplace=True)
 
-    df['HA_High'] = df[['HA_Open', 'HA_Close', 'High']].max(axis=1)
-    df['HA_Low'] = df[['HA_Open', 'HA_Close', 'Low']].min(axis=1)
+    heikin['HA_High'] = pd.concat([heikin['HA_Open'], heikin['HA_Close'], df['High']], axis=1).max(axis=1)
+    heikin['HA_Low'] = pd.concat([heikin['HA_Open'], heikin['HA_Close'], df['Low']], axis=1).min(axis=1)
 
-    return df
+    return heikin
 
 
 def moving_average(df, n):
