@@ -80,6 +80,7 @@ class HeiGo(Algo):
                 tobe_pnl = self.s['short_entry'] - close
                 self.s['order'] += 1
                 logger.info('숏 청산요청 @%s pnl[%s]', df.Close.iloc[-1], tobe_pnl)
+                self.s['short_entry'] = None
 
         elif self.s['long_entry'] is not None:
             # 롱 청산.
@@ -87,6 +88,7 @@ class HeiGo(Algo):
                 tobe_pnl = close - self.s['long_entry']
                 self.s['order'] += 1
                 logger.info('롱 청산요청 @%s pnl[%s]', df.Close.iloc[-1], tobe_pnl)
+                self.s['long_entry'] = None
 
     def less_or_eq(self, list, size):
         prev_val = None
