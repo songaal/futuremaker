@@ -14,7 +14,15 @@ https://www.quantopian.com/posts/technical-analysis-indicators-without-talib-cod
 import pandas as pd
 import numpy as np
 
-# Import Homebrew
+
+def compare_in_a_row(list, comp=lambda x: x < 0):
+    for x in list:
+        if comp(x):
+            pass
+        else:
+            return False
+    return True
+
 
 def heikinashi(df):
     df['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
@@ -24,11 +32,11 @@ def heikinashi(df):
 
     for i in range(0, len(df)):
         if i == 0:
-            df.at[i, 'HA_Open'] = (df.get_value(i, 'Open') + df.get_value(i, 'Close')) / 2
+            df.at[i, 'HA_Open'] = (df.at[i, 'Open'] + df.at[i, 'Close']) / 2
         else:
-            df.at[i, 'HA_Open'] = (df.get_value(i - 1, 'HA_Open') + df.get_value(i - 1, 'HA_Close')) / 2
+            df.at[i, 'HA_Open'] = (df.at[i - 1, 'HA_Open'] + df.at[i - 1, 'HA_Close']) / 2
 
-        df.at[i, 'HA_Diff'] = df.get_value(i, 'HA_Close') - df.get_value(i, 'HA_Open')
+        df.at[i, 'HA_Diff'] = df.at[i, 'HA_Close'] - df.at[i, 'HA_Open']
 
     if idx:
         df.set_index(idx, inplace=True)
@@ -37,6 +45,7 @@ def heikinashi(df):
     df['HA_Low'] = df[['HA_Open', 'HA_Close', 'Low']].min(axis=1)
 
     return df
+
 
 def moving_average(df, n):
     """Calculate the moving average for the given data.
@@ -321,6 +330,7 @@ def kst_oscillator(df, r1, r2, r3, r4, n1, n2, n3, n4):
     df = df.join(KST)
     return df
 
+
 ################################
 def SMA(df, column="Close", period=20):
     sma = df[column].rolling(window=period, min_periods=period - 1).mean()
@@ -356,6 +366,8 @@ def BollingerBand(df, column="Close", period=20):
     up = (sma + (std * 2)).to_frame('BBANDUP')
     lower = (sma - (std * 2)).to_frame('BBANDLO')
     return df.join(up).join(lower)
+
+
 ################################
 
 def relative_strength_index(df, n):

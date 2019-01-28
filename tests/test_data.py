@@ -4,8 +4,9 @@ from datetime import datetime, timezone, timedelta
 import pandas as pd
 import unittest
 
-from futuremaker import utils
+from futuremaker import utils, indicators
 from futuremaker.data_ingest import ingest_data
+from futuremaker.indicators import heikinashi
 from futuremaker.log import logger
 from futuremaker.zigzag import zigzag, zigzag2
 import matplotlib.pyplot as plt
@@ -93,8 +94,8 @@ class TestData(unittest.TestCase):
         asyncio.get_event_loop().run_until_complete(api.load_markets())
         _, filepath = asyncio.get_event_loop().run_until_complete(
             ingest_data(api, symbol='XBT/USD',
-                        start_date=datetime(2019, 1, 22, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
-                        end_date=datetime(2019, 1, 23, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        start_date=datetime(2019, 1, 20, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        end_date=datetime(2019, 1, 28, 15, 0, 0, tzinfo=timezone(timedelta(hours=9))),
                         interval='1m', history=0, reload=False)
         )
         print('filepath > ', filepath)
@@ -102,7 +103,7 @@ class TestData(unittest.TestCase):
                            date_parser=lambda x: datetime.fromtimestamp(int(x) / 1000),
                            usecols=['Index', 'Open', 'High', 'Low', 'Close', 'Volume'])
 
-        ha = self.HA(data)
+        ha = heikinashi(data)
 
         prev_diff = 0
         trade = 0
@@ -112,22 +113,15 @@ class TestData(unittest.TestCase):
         total_pnl = 0
         r_index = []
         r_value = []
-        close_list = []
-        ha_close_list = []
         N = 3 # 3개의 연속 가격을 확인하여 익절.
         for diff, ha_close, close, idx in zip(ha.HA_Diff, ha.HA_Close, data.Close, data.index):
             pnl = 0
             # plt.axvspan(prev_ts, ts, facecolor='g' if prev_type == 'U' else 'r', alpha=0.5)
 
-            close_list.append(close)
-            close_list = close_list[-N:]
-
-            ha_close_list.append(ha_close)
-            ha_close_list = ha_close_list[-N:]
-
+            # 갯수가 될때까지 기다린다.
             if short_entry is not None:
                 # 숏 청산.
-                if diff > 0 or self.great_or_eq(ha_close_list):
+                if diff > 0 or self.great_or_eq(ha.HA_Close, N):
                     pnl = short_entry - close
                     total_pnl += pnl
                     elapsed = idx - entry_idx
@@ -139,7 +133,8 @@ class TestData(unittest.TestCase):
                     short_entry = None
 
             elif long_entry is not None:
-                if diff < 0 or self.less_or_eq(ha_close_list):
+
+                if diff < 0 or self.less_or_eq(ha.HA_Close, N):
                     pnl = close - long_entry
                     total_pnl += pnl
                     elapsed = idx - entry_idx
@@ -154,20 +149,18 @@ class TestData(unittest.TestCase):
             if long_entry is None and short_entry is None:
                 if diff > 0 and prev_diff > 0:
                     # 가격이 높아지는 추세.
-                    # if close_list[-2] < close_list[-1]:
-                        if prev_diff + diff >= 1:
-                            # 롱 진입.
-                            long_entry = close
-                            entry_idx = idx
-                            trade += 1
+                    if prev_diff + diff >= 1:
+                        # 롱 진입.
+                        long_entry = close
+                        entry_idx = idx
+                        trade += 1
                 elif diff < 0 and prev_diff < 0:
                     # 가격이 낮아지는 추세.
-                    # if close_list[-2] > close_list[-1]:
-                        if prev_diff + diff <= -1:
-                            # 숏 진입.
-                            short_entry = close
-                            entry_idx = idx
-                            trade += 1
+                    if prev_diff + diff <= -1:
+                        # 숏 진입.
+                        short_entry = close
+                        entry_idx = idx
+                        trade += 1
 
             prev_diff = diff
 
@@ -192,42 +185,18 @@ class TestData(unittest.TestCase):
         fig.set_size_inches(16, 7)
         plt.show()
 
-    def HA(self, df):
-        df['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
-
-        idx = df.index.name
-        df.reset_index(inplace=True)
-
-        for i in range(0, len(df)):
-            if i == 0:
-                df.at[i, 'HA_Open'] = (df.get_value(i, 'Open') + df.get_value(i, 'Close')) / 2
-            else:
-                df.at[i, 'HA_Open'] = (df.get_value(i - 1, 'HA_Open') + df.get_value(i - 1, 'HA_Close')) / 2
-
-            df.at[i, 'HA_Diff'] = df.get_value(i, 'HA_Close') - df.get_value(i, 'HA_Open')
-
-        if idx:
-            df.set_index(idx, inplace=True)
-
-        df['HA_High'] = df[['HA_Open', 'HA_Close', 'High']].max(axis=1)
-        df['HA_Low'] = df[['HA_Open', 'HA_Close', 'Low']].min(axis=1)
-
-        return df
-
-    def less_or_eq(self, list):
+    def less_or_eq(self, list, size):
         prev_val = None
-        for val in list:
+        for val in list[-size:]:
             if prev_val and val > prev_val:
                 return False
             prev_val = val
-
         return True
 
-    def great_or_eq(self, list):
+    def great_or_eq(self, list, size):
         prev_val = None
-        for val in list:
+        for val in list[-size:]:
             if prev_val and val < prev_val:
                 return False
             prev_val = val
-
         return True
