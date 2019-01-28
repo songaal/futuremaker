@@ -6,18 +6,20 @@ import unittest
 
 from futuremaker import utils
 from futuremaker.data_ingest import ingest_data
+from futuremaker.log import logger
 from futuremaker.zigzag import zigzag, zigzag2
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 
+
 class TestData(unittest.TestCase):
 
-    def test_dataframe(self):
+    def test_zigzag(self):
         api = utils.ccxt_exchange('bitmex', async=True)
         asyncio.get_event_loop().run_until_complete(api.load_markets())
         _, filepath = asyncio.get_event_loop().run_until_complete(
             ingest_data(api, symbol='XBT/USD',
-                        start_date=datetime(2019, 1, 15, 0, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        start_date=datetime(2019, 1, 24, 5, 0, 0, tzinfo=timezone(timedelta(hours=9))),
                         end_date=datetime(2019, 1, 26, 19, 59, 59, tzinfo=timezone(timedelta(hours=9))),
                         interval='5m', history=0, reload=False)
         )
@@ -29,13 +31,10 @@ class TestData(unittest.TestCase):
         # data = data[300:500]
         plt.plot(data.Close)
 
-        ax = plt.gca()
-        xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
-        ax.xaxis.set_major_formatter(xfmt)
         # z = zigzag(data, deviation=0.05)
         # plt.plot(z, 'ro')
 
-        zz_high, zz_low = zigzag2(data, deviation=0.03)
+        zz_high, zz_low = zigzag2(data, deviation=0.03, spread=1)
         plt.plot(zz_high, 'go')
         plt.plot(zz_low, 'ro')
 
@@ -79,9 +78,156 @@ class TestData(unittest.TestCase):
         #             prev_type = type
 
         # print(my_index)
+        ax = plt.gca()
+        xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
+        ax.xaxis.set_major_formatter(xfmt)
         plt.xticks(rotation=30)
         plt.subplots_adjust(bottom=0.2)
         plt.grid(True)
         fig = plt.gcf()
         fig.set_size_inches(16, 5)
         plt.show()
+
+    def test_heikin(self):
+        api = utils.ccxt_exchange('bitmex', async=True)
+        asyncio.get_event_loop().run_until_complete(api.load_markets())
+        _, filepath = asyncio.get_event_loop().run_until_complete(
+            ingest_data(api, symbol='XBT/USD',
+                        start_date=datetime(2019, 1, 22, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        end_date=datetime(2019, 1, 23, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        interval='1m', history=0, reload=False)
+        )
+        print('filepath > ', filepath)
+        data = pd.read_csv(filepath, index_col='Index', parse_dates=True,
+                           date_parser=lambda x: datetime.fromtimestamp(int(x) / 1000),
+                           usecols=['Index', 'Open', 'High', 'Low', 'Close', 'Volume'])
+
+        ha = self.HA(data)
+
+        prev_diff = 0
+        trade = 0
+        entry_idx = None
+        long_entry = None
+        short_entry = None
+        total_pnl = 0
+        r_index = []
+        r_value = []
+        close_list = []
+        ha_close_list = []
+        N = 3 # 3개의 연속 가격을 확인하여 익절.
+        for diff, ha_close, close, idx in zip(ha.HA_Diff, ha.HA_Close, data.Close, data.index):
+            pnl = 0
+            # plt.axvspan(prev_ts, ts, facecolor='g' if prev_type == 'U' else 'r', alpha=0.5)
+
+            close_list.append(close)
+            close_list = close_list[-N:]
+
+            ha_close_list.append(ha_close)
+            ha_close_list = ha_close_list[-N:]
+
+            if short_entry is not None:
+                # 숏 청산.
+                if diff > 0 or self.great_or_eq(ha_close_list):
+                    pnl = short_entry - close
+                    total_pnl += pnl
+                    elapsed = idx - entry_idx
+                    r_index.append(idx)
+                    r_value.append(total_pnl)
+                    trade += 1
+                    logger.info('[%s] TOTAL_PNL[%s] PNL[$%s] SEC[%s] Price[%s->%s] Time[%s~%s]', trade, total_pnl, pnl, elapsed.seconds, short_entry,
+                                close, entry_idx, idx)
+                    short_entry = None
+
+            elif long_entry is not None:
+                if diff < 0 or self.less_or_eq(ha_close_list):
+                    pnl = close - long_entry
+                    total_pnl += pnl
+                    elapsed = idx - entry_idx
+                    r_index.append(idx)
+                    r_value.append(total_pnl)
+                    trade += 1
+                    logger.info('[%s] TOTAL_PNL[%s] PNL[$%s] SEC[%s] Price[%s->%s] Time[%s~%s]', trade, total_pnl, pnl, elapsed.seconds, long_entry,
+                                close, entry_idx, idx)
+                    long_entry = None
+
+            # 청산하고 바로 다시 진입도 가능하다.
+            if long_entry is None and short_entry is None:
+                if diff > 0 and prev_diff > 0:
+                    # 가격이 높아지는 추세.
+                    # if close_list[-2] < close_list[-1]:
+                        if prev_diff + diff >= 1:
+                            # 롱 진입.
+                            long_entry = close
+                            entry_idx = idx
+                            trade += 1
+                elif diff < 0 and prev_diff < 0:
+                    # 가격이 낮아지는 추세.
+                    # if close_list[-2] > close_list[-1]:
+                        if prev_diff + diff <= -1:
+                            # 숏 진입.
+                            short_entry = close
+                            entry_idx = idx
+                            trade += 1
+
+            prev_diff = diff
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(2, 1, 1)
+        ax2 = fig.add_subplot(2, 1, 2)
+
+        # 차트1
+        ax1.plot(data.Close)
+
+        # 차트2
+        pnl_series = pd.Series(data=r_value, index=r_index)
+        ax2.plot(pnl_series, 'ro')
+
+        ax = plt.gca()
+        xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
+        ax.xaxis.set_major_formatter(xfmt)
+        plt.xticks(rotation=30)
+        plt.subplots_adjust(bottom=0.2)
+        plt.grid(True)
+        fig = plt.gcf()
+        fig.set_size_inches(16, 7)
+        plt.show()
+
+    def HA(self, df):
+        df['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
+
+        idx = df.index.name
+        df.reset_index(inplace=True)
+
+        for i in range(0, len(df)):
+            if i == 0:
+                df.at[i, 'HA_Open'] = (df.get_value(i, 'Open') + df.get_value(i, 'Close')) / 2
+            else:
+                df.at[i, 'HA_Open'] = (df.get_value(i - 1, 'HA_Open') + df.get_value(i - 1, 'HA_Close')) / 2
+
+            df.at[i, 'HA_Diff'] = df.get_value(i, 'HA_Close') - df.get_value(i, 'HA_Open')
+
+        if idx:
+            df.set_index(idx, inplace=True)
+
+        df['HA_High'] = df[['HA_Open', 'HA_Close', 'High']].max(axis=1)
+        df['HA_Low'] = df[['HA_Open', 'HA_Close', 'Low']].min(axis=1)
+
+        return df
+
+    def less_or_eq(self, list):
+        prev_val = None
+        for val in list:
+            if prev_val and val > prev_val:
+                return False
+            prev_val = val
+
+        return True
+
+    def great_or_eq(self, list):
+        prev_val = None
+        for val in list:
+            if prev_val and val < prev_val:
+                return False
+            prev_val = val
+
+        return True
