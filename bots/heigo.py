@@ -30,7 +30,7 @@ class HeiGo(Algo):
 
     def update_candle(self, df, candle):
         # logger.info('update_candle %s > %s : %s', df.index[-1], df.iloc[-1], candle)
-        logger.info('>> %s >> %s', df.index[-1].to_pydatetime(),
+        logger.info('>> %s >> %s', datetime.fromtimestamp(df.index[-1] / 1000),
                     f"O:{candle['open']} H:{candle['high']} L:{candle['low']} C:{candle['close']} V:{candle['volume']}")
 
         df = heikinashi(df)

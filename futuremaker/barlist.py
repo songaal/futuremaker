@@ -15,10 +15,9 @@ class BarList:
         # dates = pd.DatetimeIndex(index_list, dtype='datetime64[ns]', freq=self.freq)
         self.df = pd.DataFrame(data=data_list, index=index_list, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
 
-    def update(self, datetime, open, high, low, close, volume, unit='s'):
+    def update(self, timestamp, open, high, low, close, volume, unit='s'):
         # index = pd.to_datetime(datetime, unit=unit)
-        index = datetime.replace(tzinfo=None)
-        self.df.loc[index] = [open, high, low, close, volume]
+        self.df.loc[timestamp] = [open, high, low, close, volume]
 
         size = len(self.df.index)
         if size > self.history:

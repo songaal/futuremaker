@@ -47,7 +47,8 @@ class CandleHandler(object):
         self.candle.init(index_list, data_list)
 
     def update(self, row):
-        index = datetime.datetime.strptime(row['timestamp'], self.datetime_format).replace(tzinfo=pytz.UTC)
+        dt = datetime.datetime.strptime(row['timestamp'], self.datetime_format).replace(tzinfo=pytz.UTC)
+        index = dt.timestamp() * 1000
         open = row['open']
         high = row['high']
         low = row['low']

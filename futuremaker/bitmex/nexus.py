@@ -1,3 +1,5 @@
+import datetime
+
 from futuremaker import utils
 from futuremaker.bitmex_ws import BitmexWS
 from futuremaker.candle_handler import CandleHandler
@@ -36,7 +38,18 @@ class Nexus(object):
                            testnet=testnet)
 
         if candle_limit and candle_period:
-            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, history=candle_limit)
+            period_in_second = 0
+            if candle_period == '1m':
+                period_in_second = 60
+            elif candle_period == '5m':
+                period_in_second = 300
+            elif candle_period == '1h':
+                period_in_second = 3600
+            elif candle_period == '1d':
+                period_in_second = 3600 * 24
+            since = datetime.datetime.now().timestamp() - period_in_second * candle_limit
+            since = since * 1000
+            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, history=candle_limit, since=since)
 
     def callback(self, update_orderbook=None, update_candle=None, update_order=None, update_position=None):
         """
