@@ -28,7 +28,7 @@ def heikinashi(df):
     heikin = pd.DataFrame()
     heikin['HA_Close'] = (df['Open'] + df['High'] + df['Low'] + df['Close']) / 4
 
-    idx = heikin.index.name
+    idx = df.index.name
     df.reset_index(inplace=True)
     heikin.reset_index(inplace=True)
 
@@ -39,9 +39,11 @@ def heikinashi(df):
             heikin.at[i, 'HA_Open'] = (heikin.at[i - 1, 'HA_Open'] + heikin.at[i - 1, 'HA_Close']) / 2
             heikin.at[i, 'HA_Diff'] = heikin.at[i, 'HA_Close'] - heikin.at[i, 'HA_Open']
 
-    if idx:
-        df.set_index(idx, inplace=True)
-        heikin.set_index(idx, inplace=True)
+    if idx is None:
+        idx = 'index'
+
+    df.set_index(idx, inplace=True)
+    heikin.set_index(idx, inplace=True)
 
     heikin['HA_High'] = pd.concat([heikin['HA_Open'], heikin['HA_Close'], df['High']], axis=1).max(axis=1)
     heikin['HA_Low'] = pd.concat([heikin['HA_Open'], heikin['HA_Close'], df['Low']], axis=1).min(axis=1)

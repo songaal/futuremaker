@@ -33,11 +33,11 @@ class HeiGo(Algo):
         logger.info('>> %s >> %s', datetime.fromtimestamp(df.index[-1] / 1000),
                     f"O:{candle['open']} H:{candle['high']} L:{candle['low']} C:{candle['close']} V:{candle['volume']}")
 
-        df = heikinashi(df)
+        hei = heikinashi(df)
         logger.info('Enter..')
-        self.enter(df)
+        self.enter(df, hei)
         logger.info('Leave..')
-        self.leave(df)
+        self.leave(df, hei)
         logger.info('Done..')
         # 다음 캔들이 도착할때까지 체결못하면 취소하고 다시 시도.
         # if self.tobe_long:
@@ -54,37 +54,39 @@ class HeiGo(Algo):
     def update_position(self, position):
         logger.info('update_position > %s', position)
 
-    def enter(self, df):
+    def enter(self, df, hei):
         if self.s['long_entry'] is None and self.s['short_entry'] is None:
-            if df.HA_Diff.iloc[-1] > 0 and df.HA_Diff.iloc[-2] > 0:
+            if hei.HA_Diff.iloc[-1] > 0 and hei.HA_Diff.iloc[-2] > 0:
                 # 가격이 높아지는 추세.
-                if df.HA_Diff.iloc[-1] + df.HA_Diff.iloc[-2] >= 1:
+                if hei.HA_Diff.iloc[-1] + hei.HA_Diff.iloc[-2] >= 1:
                     # 롱 진입.
-                    self.s['long_entry'] = df.HA_Close.iloc[-1]
+                    self.s['long_entry'] = hei.HA_Close.iloc[-1]
                     self.s['order'] += 1
-            elif df.HA_Diff.iloc[-1] < 0 and df.HA_Diff.iloc[-2] < 0:
+                    logger.info('롱 진입요청 @%s', df.Close.iloc[-1])
+            elif hei.HA_Diff.iloc[-1] < 0 and hei.HA_Diff.iloc[-2] < 0:
                 # 가격이 낮아지는 추세.
-                if df.HA_Diff.iloc[-1] + df.HA_Diff.iloc[-2] <= -1:
+                if hei.HA_Diff.iloc[-1] + hei.HA_Diff.iloc[-2] <= -1:
                     # 숏 진입.
-                    self.s['short_entry'] = df.HA_Close.iloc[-1]
+                    self.s['short_entry'] = hei.HA_Close.iloc[-1]
                     self.s['order'] += 1
+                    logger.info('숏 진입요청 @%s', df.Close.iloc[-1])
 
-    def leave(self, df):
+    def leave(self, df, hei):
         N = 3  # 3개의 연속 가격을 확인하여 익절.
-        close = df.HA_Close.iloc[-1]
+        close = hei.HA_Close.iloc[-1]
         if self.s['short_entry'] is not None:
             # 숏 청산.
-            if df.HA_Diff.iloc[-1] > 0 or self.great_or_eq(df.HA_Close, N):
+            if hei.HA_Diff.iloc[-1] > 0 or self.great_or_eq(hei.HA_Close, N):
                 tobe_pnl = self.s['short_entry'] - close
                 self.s['order'] += 1
-                logger.info('[%s] TRY Price[%s]', self.s['trade'], close)
+                logger.info('숏 청산요청 @%s pnl[%s]', df.Close.iloc[-1], tobe_pnl)
 
         elif self.s['long_entry'] is not None:
             # 롱 청산.
-            if df.HA_Diff.iloc[-1] < 0 or self.less_or_eq(df.HA_Close, N):
+            if hei.HA_Diff.iloc[-1] < 0 or self.less_or_eq(hei.HA_Close, N):
                 tobe_pnl = close - self.s['long_entry']
                 self.s['order'] += 1
-                long_entry = None
+                logger.info('롱 청산요청 @%s pnl[%s]', df.Close.iloc[-1], tobe_pnl)
 
     def less_or_eq(self, list, size):
         prev_val = None
