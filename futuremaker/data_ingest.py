@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from futuremaker.log import logger
 
 
-async def ingest_data(api, symbol, start_date, end_date, interval, history=0, reload=False):
+# async
+def ingest_data(api, symbol, start_date, end_date, interval, history=0, reload=False):
     """
     데이터를 받아서 csv파일로 저장한다.
     만약 파일이 존재한다면 스킵한다.
@@ -70,7 +71,8 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history=0, re
 
             limit = min(length, max_limit)
             logger.debug('#### fetch_ohlcv request [%s / %s]', limit, length)
-            candles = await fetch_ohlcv(api, symbol, interval, since, limit, params)
+            # candles = await
+            candles = fetch_ohlcv(api, symbol, interval, since, limit, params)
             # 읽은 갯수만큼 빼준다.
             length -= limit
             logger.debug('#### fetch_ohlcv remnant [%s]', length)
@@ -103,10 +105,12 @@ async def ingest_data(api, symbol, start_date, end_date, interval, history=0, re
     return base_dir, filepath
 
 
-async def fetch_ohlcv(api, symbol, interval, since, limit, params=None):
+# async
+def fetch_ohlcv(api, symbol, interval, since, limit, params=None):
     if api.has['fetchOHLCV']:
         if symbol in api.markets:
-            return await api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit, params=params)
+            # return await
+            return api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit, params=params)
 
 
 def split_interval(time_interval):

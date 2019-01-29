@@ -18,13 +18,15 @@ class CandleHandler(object):
         self.since = since
         self.datetime_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 
-    async def load(self):
+    # async
+    def load(self):
         # 미리 history 크기의 df 를 만들고.
         # history 만큼 캔들 데이터를 채워넣는다.
         # 초기화. 데이터는 비어있음.
 
         # 최신것부터 limit 개를 가져온다.
-        new_data = await self.api.fetch_ohlcv(symbol= self.symbol, timeframe=self.period, since=self.since, limit=self.history)
+        # new_data = await
+        new_data = self.api.fetch_ohlcv(symbol= self.symbol, timeframe=self.period, since=self.since, limit=self.history)
         # 오래된순 정렬로 바꿈.
         # new_data = new_data[::-1]
         index_list = []

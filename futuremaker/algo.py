@@ -1,6 +1,8 @@
 
 
 class Algo(object):
+    def __init__(self):
+        self.api = None
 
     def update_candle(self, df, candle):
         """

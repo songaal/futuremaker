@@ -25,14 +25,14 @@ class Nexus(object):
         :param candle_period: 봉주기. Bitmex는 4가지만 지원한다. 1m, 5m, 1h, 1d
         """
         self.candle_handler = None
-        self.symbol = symbol
-        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=True, opt={'test':testnet})
+        raw_symbol = symbol.replace('/', '')
+        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, opt={'test':testnet})
         if api_key and api_secret and self.api and leverage is not None:
-            self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
+            self.api.private_post_position_leverage({'symbol': raw_symbol, 'leverage': leverage})
 
         logger.info('>>candle_period>> %s',candle_period)
             # 웹소켓 처리기.
-        self.ws = BitmexWS(symbol.replace('/', ''), candle_period,
+        self.ws = BitmexWS(raw_symbol, candle_period,
                            api_key=api_key,
                            api_secret=api_secret,
                            testnet=testnet)
@@ -75,10 +75,12 @@ class Nexus(object):
     async def load(self):
         try:
 
-            await self.api.load_markets()
+            # await
+            self.api.load_markets()
 
             if self.candle_handler:
-                await self.candle_handler.load()
+                # await
+                self.candle_handler.load()
             else:
                 logger.info('candle_handler 를 사용하지 않습니다.')
 

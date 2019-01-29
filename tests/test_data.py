@@ -94,8 +94,8 @@ class TestData(unittest.TestCase):
         asyncio.get_event_loop().run_until_complete(api.load_markets())
         _, filepath = asyncio.get_event_loop().run_until_complete(
             ingest_data(api, symbol='XBT/USD',
-                        start_date=datetime(2019, 1, 21, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
-                        end_date=datetime(2019, 1, 29, 11, 30, 0, tzinfo=timezone(timedelta(hours=9))),
+                        start_date=datetime(2019, 1, 28, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        end_date=datetime(2019, 1, 29, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
                         interval='1m', history=0, reload=False)
         )
         print('filepath > ', filepath)
@@ -150,14 +150,14 @@ class TestData(unittest.TestCase):
             if long_entry is None and short_entry is None:
                 if diff > 0 and prev_diff > 0 and pprev_diff < 0:
                     # 가격이 높아지는 추세.
-                    if prev_diff + diff >= 1:
+                    if prev_diff + diff >= 2:
                         # 롱 진입.
                         long_entry = close
                         entry_idx = idx
                         trade += 1
                 elif diff < 0 and prev_diff < 0 and pprev_diff > 0:
                     # 가격이 낮아지는 추세.
-                    if prev_diff + diff <= -1:
+                    if prev_diff + diff <= -2:
                         # 숏 진입.
                         short_entry = close
                         entry_idx = idx
