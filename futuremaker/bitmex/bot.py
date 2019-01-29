@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime
 
+import requests
 from aiohttp import web
 
 from futuremaker import utils
@@ -41,7 +42,9 @@ class Bot(object):
             self.nexus = nexus_mock.Nexus(exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end)
 
     def send_telegram(self, text):
-        asyncio.get_event_loop().create_task(self.mqueue.put(text))
+        coro = utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+        logger.info('Telegram %s [%s] [%s]', text, self.telegram_chat_id, self.telegram_bot_token)
+        asyncio.get_event_loop().create_task(coro)
 
     async def init(self):
         """
@@ -59,12 +62,13 @@ class Bot(object):
         메시지큐.
         :return:
         """
-        while True:
-            try:
-                text = await self.mqueue.get()
-                await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-            except Exception as e:
-                logger.error('_consume error >> %s', e)
+        pass
+        # while True:
+        #     try:
+        #         text = await self.mqueue.get()
+        #         await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+        #     except Exception as e:
+        #         logger.error('_consume error >> %s', e)
 
     def run(self, algo):
         self.nexus.callback(update_orderbook=algo.update_orderbook,
@@ -77,7 +81,6 @@ class Bot(object):
         algo.send_telegram = self.send_telegram
 
         loop = asyncio.get_event_loop()
-        self.mqueue = asyncio.Queue(loop=loop)
         try:
             logger.info('SYMBOL: %s', self.symbol)
             logger.info('CANDLE_PERIOD: %s', self.candle_period)
@@ -86,7 +89,10 @@ class Bot(object):
             logger.info('ENV[TZ]: %s', os.getenv("TZ"))
             logger.info('LOGLEVEL: %s', os.getenv("LOGLEVEL"))
             logger.info('TZNAME: %s', time.tzname)
+            ip_address = requests.get('http://ip.42.pl/raw').text
+            logger.info('IP: %s', ip_address)
             logger.info('Loading...')
+            self.send_telegram('Futuremaker Bot started.. {}'.format(ip_address))
             loop.run_until_complete(self.nexus.load())
             nexus_start = loop.create_task(self.nexus.start())
             loop.run_until_complete(self.init())
@@ -118,8 +124,3 @@ class Bot(object):
     async def _handle_info(self, request):
         return web.Response(body='{}'.format(self.__class__.__name__))
 
-    async def _post_orders(self):
-        pass
-
-    async def _get_orders(self):
-        pass

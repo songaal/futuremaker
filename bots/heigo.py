@@ -58,7 +58,12 @@ class HeiGo(Algo):
 
     def update_order(self, order):
         logger.debug('update_order > %s', order)
-        self.send_telegram('{} {} {}XBT @{}'.format(order['ordType'], order['side'], order['orderQty'], order['price']))
+        # if 'side' in order:
+        #     self.send_telegram(
+        #         '{} {} {}XBT @{}'.format(order['ordType'], order['side'], order['orderQty'], order['price']))
+        if 'ordStatus' in order:
+            if order['ordStatus'] == 'Filled':
+                self.send_telegram('Order filled {} {}@{}'.format(order['symbol'], order['cumQty'], order['avgPx']))
 
     def update_orderbook(self, orderbook):
         self.s['bid1'] = orderbook['bids'][0][0]
@@ -85,6 +90,7 @@ class HeiGo(Algo):
 
         if 'avgEntryPrice' in position:
             if position['avgEntryPrice']:
+                ## entry_price가 대부분 안들어온다. 포지션이 수정될때만 들어옴. 봇을 리스타트시 안들어옴.
                 self.s['entry_price'] = position['avgEntryPrice']
                 if current_qty > 0:
                     # 롱 포지션은 아래쪽에 Sell을 예약한다.
@@ -96,8 +102,8 @@ class HeiGo(Algo):
                             if order['stopPx'] != stop_price:
                                 order_id = order['orderID']
                                 self.api.edit_order(id=order_id, symbol=symbol, type='Stop', side='Buy',
-                                                amount=abs(current_qty),
-                                                params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                                                    amount=abs(current_qty),
+                                                    params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
                             found = True
                             break
                     if not found:
@@ -114,8 +120,8 @@ class HeiGo(Algo):
                             if order['stopPx'] != stop_price:
                                 order_id = order['orderID']
                                 self.api.edit_order(id=order_id, symbol=symbol, type='Stop', side='Sell',
-                                                amount=abs(current_qty),
-                                                params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                                                    amount=abs(current_qty),
+                                                    params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
                             found = True
                             break
                     if not found:
@@ -137,7 +143,8 @@ class HeiGo(Algo):
                 if allowed and abs(hei.HA_Diff.iloc[-1] + hei.HA_Diff.iloc[-2]) >= 1:
                     # 롱 진입.
                     self.s['order'] += 1
-                    logger.info('롱 진입요청 @%s', df.Close.iloc[-1])
+                    logger.info('롱 진입요청 %s XBT@%s', self.amount, self.s['bid1'])
+                    self.send_telegram('Enter Long Req {} XBT@{}'.format(self.amount, self.s['bid1']))
                     self.buy_orderbook1(self.amount)
 
             elif hei.HA_Diff.iloc[-1] < 0 and hei.HA_Diff.iloc[-2] < 0:
@@ -150,7 +157,8 @@ class HeiGo(Algo):
                 if allowed and abs(hei.HA_Diff.iloc[-1] + hei.HA_Diff.iloc[-2]) >= 1:
                     # 숏 진입.
                     self.s['order'] += 1
-                    logger.info('숏 진입요청 @%s', df.Close.iloc[-1])
+                    logger.info('숏 진입요청 %s XBT@%s', self.amount, self.s['ask1'])
+                    self.send_telegram('Enter Short Req {} XBT@{}'.format(self.amount, self.s['ask1']))
                     self.sell_orderbook1(self.amount)
 
     def leave(self, df, hei):
@@ -166,6 +174,8 @@ class HeiGo(Algo):
                 # takeprofit=익절. losscut=손절.
                 self.s['order'] += 1
                 logger.info('숏 청산요청 @%s tobe_pnl[%s]', self.s['bid1'], tobe_pnl)
+                self.send_telegram(
+                    'End Short Req{} XBT@{} tobe_pnl[{}]'.format(abs(self.s['current_qty']), self.s['bid1'], tobe_pnl))
                 self.buy_orderbook1(self.s['current_qty'], reduce_only=True)
 
         elif self.s['current_qty'] > 0:
@@ -177,6 +187,8 @@ class HeiGo(Algo):
                     or -tobe_pnl >= self.losscut:
                 self.s['order'] += 1
                 logger.info('롱 청산요청 @%s tobe_pnl[%s]', self.s['ask1'], tobe_pnl)
+                self.send_telegram(
+                    'End Long Req {} XBT@{} tobe_pnl[{}]'.format(abs(self.s['current_qty']), self.s['ask1'], tobe_pnl))
                 self.sell_orderbook1(self.s['current_qty'], reduce_only=True)
 
     def buy_orderbook1(self, amount, reduce_only=False):

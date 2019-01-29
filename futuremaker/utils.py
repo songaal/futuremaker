@@ -162,6 +162,7 @@ def period_to_freq(period):
     """
     return period.replace('m', 'T').upper()
 
+
 def _extract_topic(topic_request):
     list = []
     for str in topic_request['args']:
@@ -169,8 +170,9 @@ def _extract_topic(topic_request):
         list.append(tmp[0])
     return list
 
+
 async def send_telegram(telegram_bot_token, chat_id, text):
-    url = 'https://api.telegram.org/bot' + telegram_bot_token
+    url = 'https://api.telegram.org/bot' + telegram_bot_token + '/sendMessage'
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params={
             'chat_id': chat_id,

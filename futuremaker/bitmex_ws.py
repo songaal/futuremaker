@@ -156,8 +156,9 @@ class BitmexWS(object):
                     raise Exception("Unknown action: %s" % action)
 
                 # 업데이트 콜백을 호출한다.
-                if self.is_ready:
-                    for item in value:
+
+                for item in value:
+                    if self.is_ready:
                         if table.startswith('tradeBin'):
                             if self.update_candle and item:
                                 self.update_candle(item)
@@ -167,9 +168,9 @@ class BitmexWS(object):
                         elif table == 'order':
                             if self.update_order and item:
                                 self.update_order(item)
-                        elif table == 'position':
-                            if self.update_position and item:
-                                self.update_position(item)
+                    if table == 'position':
+                        if self.update_position and item:
+                            self.update_position(item)
         except:
             logger.error(traceback.format_exc())
 
