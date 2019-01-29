@@ -20,7 +20,7 @@ dependency_links = []
 
 setup(
     name="futuremaker",
-    version="0.0.9",
+    version="0.0.10",
     author="SongSangWook",
     author_email="swsong@gncloud.kr",
     description="Cryptocurrency trading library",
