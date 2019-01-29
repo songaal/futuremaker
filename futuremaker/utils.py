@@ -16,7 +16,7 @@ from futuremaker.log import logger
 import ccxt
 import ccxt.async_support as ccxt_async
 
-def ccxt_exchange(exchange, api_key=None, api_secret=None, async=True, opt={}):
+def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, opt={}):
 
     if api_key is not None and api_secret is not None:
         opt.update({
@@ -24,7 +24,7 @@ def ccxt_exchange(exchange, api_key=None, api_secret=None, async=True, opt={}):
             'secret': api_secret,
         })
     logger.info('exchange_id >>> %s', exchange)
-    if async:
+    if is_async:
         api = getattr(ccxt_async, exchange)(opt)
     else:
         api = getattr(ccxt, exchange)(opt)

@@ -9,7 +9,7 @@ from futuremaker.log import logger
 class TestCcxt(unittest.TestCase):
 
     def test_bitmex_data_ingest(self):
-        exchange = utils.ccxt_exchange('bitmex', async=True)
+        exchange = utils.ccxt_exchange('bitmex', is_async=True)
         markets = asyncio.get_event_loop().run_until_complete(exchange.load_markets())
         #exchange, symbols, start_date, end_date, periods
         base_dir, filepath = asyncio.get_event_loop().run_until_complete(
@@ -18,7 +18,7 @@ class TestCcxt(unittest.TestCase):
         logger.debug('filepath > %s', filepath)
 
     def test_ohlcv(self):
-        api = utils.ccxt_exchange('bitmex', async=True)
+        api = utils.ccxt_exchange('bitmex', is_async=True)
 
         async def go(symbol, timeframe, limit):
             m = await api.load_markets()

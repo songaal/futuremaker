@@ -16,7 +16,7 @@ import matplotlib.dates as md
 class TestData(unittest.TestCase):
 
     def test_zigzag(self):
-        api = utils.ccxt_exchange('bitmex', async=True)
+        api = utils.ccxt_exchange('bitmex', is_async=True)
         asyncio.get_event_loop().run_until_complete(api.load_markets())
         _, filepath = asyncio.get_event_loop().run_until_complete(
             ingest_data(api, symbol='XBT/USD',
@@ -90,12 +90,12 @@ class TestData(unittest.TestCase):
         plt.show()
 
     def test_heikin(self):
-        api = utils.ccxt_exchange('bitmex', async=True)
+        api = utils.ccxt_exchange('bitmex', is_async=True)
         asyncio.get_event_loop().run_until_complete(api.load_markets())
         _, filepath = asyncio.get_event_loop().run_until_complete(
             ingest_data(api, symbol='XBT/USD',
-                        start_date=datetime(2019, 1, 20, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
-                        end_date=datetime(2019, 1, 28, 15, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        start_date=datetime(2019, 1, 21, 12, 0, 0, tzinfo=timezone(timedelta(hours=9))),
+                        end_date=datetime(2019, 1, 29, 11, 30, 0, tzinfo=timezone(timedelta(hours=9))),
                         interval='1m', history=0, reload=False)
         )
         print('filepath > ', filepath)
@@ -106,6 +106,7 @@ class TestData(unittest.TestCase):
         ha = heikinashi(data)
 
         prev_diff = 0
+        pprev_diff = 0
         trade = 0
         entry_idx = None
         long_entry = None
@@ -121,7 +122,7 @@ class TestData(unittest.TestCase):
             # 갯수가 될때까지 기다린다.
             if short_entry is not None:
                 # 숏 청산.
-                if diff > 0 or self.great_or_eq(ha.HA_Close, N):
+                if diff > 0 or self.great_or_eq(ha.HA_Close, N) or abs(short_entry - close) >= 1:
                     pnl = short_entry - close
                     total_pnl += pnl
                     elapsed = idx - entry_idx
@@ -134,7 +135,7 @@ class TestData(unittest.TestCase):
 
             elif long_entry is not None:
 
-                if diff < 0 or self.less_or_eq(ha.HA_Close, N):
+                if diff < 0 or self.less_or_eq(ha.HA_Close, N) or abs(long_entry - close) >= 1:
                     pnl = close - long_entry
                     total_pnl += pnl
                     elapsed = idx - entry_idx
@@ -147,14 +148,14 @@ class TestData(unittest.TestCase):
 
             # 청산하고 바로 다시 진입도 가능하다.
             if long_entry is None and short_entry is None:
-                if diff > 0 and prev_diff > 0:
+                if diff > 0 and prev_diff > 0 and pprev_diff < 0:
                     # 가격이 높아지는 추세.
                     if prev_diff + diff >= 1:
                         # 롱 진입.
                         long_entry = close
                         entry_idx = idx
                         trade += 1
-                elif diff < 0 and prev_diff < 0:
+                elif diff < 0 and prev_diff < 0 and pprev_diff > 0:
                     # 가격이 낮아지는 추세.
                     if prev_diff + diff <= -1:
                         # 숏 진입.
@@ -162,6 +163,7 @@ class TestData(unittest.TestCase):
                         entry_idx = idx
                         trade += 1
 
+            pprev_diff = prev_diff
             prev_diff = diff
 
         fig = plt.figure()

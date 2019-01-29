@@ -2,12 +2,11 @@ from datetime import datetime
 import os
 import sys
 
-from futuremaker import indicators, utils
+from futuremaker import utils
 from futuremaker.algo import Algo
 from futuremaker.bitmex.bot import Bot
 from futuremaker.indicators import heikinashi
 from futuremaker.log import logger
-import talib as ta
 
 VERSION = '1.0.0'
 

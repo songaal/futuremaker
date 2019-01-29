@@ -26,7 +26,7 @@ class Nexus(object):
         """
         self.candle_handler = None
         self.symbol = symbol
-        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, async=True, opt={'test':testnet})
+        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=True, opt={'test':testnet})
         if api_key and api_secret and self.api and leverage is not None:
             self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
 

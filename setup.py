@@ -13,13 +13,14 @@ install_requires = [
     'pandas',
     'pytz',
     'python-telegram-bot',
+    'ccxt'
     ]
 
 dependency_links = []
 
 setup(
     name="futuremaker",
-    version="0.0.6",
+    version="0.0.9",
     author="SongSangWook",
     author_email="swsong@gncloud.kr",
     description="Cryptocurrency trading library",

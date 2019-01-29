@@ -10,7 +10,7 @@ class Nexus(object):
         self.candle_handler = None
         self.symbol = symbol
         self.leverage = leverage
-        self.api = utils.ccxt_exchange(exchange, async=True)
+        self.api = utils.ccxt_exchange(exchange, is_async=True)
 
         self.candle_limit = candle_limit
         self.candle_period = candle_period

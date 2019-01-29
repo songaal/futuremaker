@@ -6,3 +6,4 @@ pytz
 telegram
 ccxt
 matplotlib
+wheel
