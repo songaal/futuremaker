@@ -31,19 +31,21 @@ class HeiGo(Algo):
         logger.info('>> %s >> %s', datetime.fromtimestamp(df.index[-1] / 1000),
                     f"O:{candle['open']} H:{candle['high']} L:{candle['low']} C:{candle['close']} V:{candle['volume']}")
         logger.info('orders > %s', self.data['order'])
-
+        logger.info('self.s > %s', self.s)
         for order in self.data['order']:
             # limit 주문만 수정. stop은 손절주문이므로 수정하지 않으며, update_position에서 수정함.
             if order['ordType'] == 'Limit' and order['leavesQty'] > 0:
                 price = order['price']
+                order_id = order['orderID']
                 if order['side'] == 'Sell':
-                    ## TODO 1.
-                    # 1. 진입주문이 멀어졌다면 취소해준다.
-                    # 2. 청산주문이 멀어졌다면 취소한다.
-                    # 로직?
-                    pass
+                    ask1 = self.data['orderBook10'][0]['asks'][0]
+                    if abs(ask1[0] - price) >= 1:  # 3틱이상 밀리면 취소.
+                        # 1달러보다 벌어지면 취소.
+                        self.api.cancel_order(id=order_id, symbol=symbol)
                 elif order['side'] == 'Buy':
-                    pass
+                    bid1 = self.data['orderBook10'][0]['bids'][0]
+                    if abs(bid1[0] - price) >= 1:  # 3틱이상 밀리면 취소.
+                        self.api.cancel_order(id=order_id, symbol=symbol)
 
         hei = heikinashi(df)
         logger.info('Enter..')
@@ -89,7 +91,7 @@ class HeiGo(Algo):
                             found = True
                             break
                     if not found:
-                        self.api.create_order(symbol, type='Stop', side='Buy',
+                        self.api.create_order(symbol, type='Stop', side='Sell',
                                               amount=abs(current_qty),
                                               params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
                 elif current_qty < 0:
@@ -101,12 +103,12 @@ class HeiGo(Algo):
                         if order['ordType'] == 'Stop' and order['side'] == 'Buy':
                             order_id = order['orderID']
                             self.api.edit_order(id=order_id, symbol=symbol, type='Stop', side='Sell',
-                                              amount=abs(current_qty),
-                                              params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                                                amount=abs(current_qty),
+                                                params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
                             found = True
                             break
                     if not found:
-                        self.api.create_order(symbol, type='Stop', side='Sell',
+                        self.api.create_order(symbol, type='Stop', side='Buy',
                                               amount=abs(current_qty),
                                               params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
 
@@ -139,7 +141,7 @@ class HeiGo(Algo):
                 self.s['order'] += 1
                 logger.info('숏 청산요청 @%s tobe_pnl[%s]', df.Close.iloc[-1], tobe_pnl)
                 self.s['short_entry'] = None
-                self.buy_orderbook1(self.s['current_qty'])
+                self.buy_orderbook1(self.s['current_qty'], reduce_only=True)
 
         elif self.s['current_qty'] > 0:
             # 롱 청산.
@@ -148,21 +150,27 @@ class HeiGo(Algo):
                 self.s['order'] += 1
                 logger.info('롱 청산요청 @%s tobe_pnl[%s]', df.Close.iloc[-1], tobe_pnl)
                 self.s['long_entry'] = None
-                self.sell_orderbook1(self.s['current_qty'])
+                self.sell_orderbook1(self.s['current_qty'], reduce_only=True)
 
-    def buy_orderbook1(self, amount):
+    def buy_orderbook1(self, amount, reduce_only=False):
         bid1 = self.data['orderBook10'][0]['bids'][0]
         limit_price, limit_volume = bid1[0], bid1[1]
+        params = {'execInst': 'ParticipateDoNotInitiate'}
+        if reduce_only:
+            params = {'execInst': 'ParticipateDoNotInitiate,Close'}
         self.api.create_order(symbol, type='limit', side='buy',
-                             price=limit_price, amount=abs(amount),
-                             params={'execInst': 'ParticipateDoNotInitiate'})
+                              price=limit_price, amount=abs(amount),
+                              params=params)
 
-    def sell_orderbook1(self, amount):
+    def sell_orderbook1(self, amount, reduce_only=False):
         ask1 = self.data['orderBook10'][0]['asks'][0]
         limit_price, limit_volume = ask1[0], ask1[1]
+        params = {'execInst': 'ParticipateDoNotInitiate'}
+        if reduce_only:
+            params = {'execInst': 'ParticipateDoNotInitiate,Close'}
         self.api.create_order(symbol, type='limit', side='sell',
-                             price=limit_price, amount=abs(amount),
-                             params={'execInst': 'ParticipateDoNotInitiate'})
+                              price=limit_price, amount=abs(amount),
+                              params=params)
 
     def less_or_eq(self, list, size):
         prev_val = None
