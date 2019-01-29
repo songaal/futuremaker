@@ -7,3 +7,4 @@ telegram
 ccxt
 matplotlib
 wheel
+python-telegram-bot

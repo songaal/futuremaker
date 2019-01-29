@@ -32,7 +32,7 @@ class CandleHandler(object):
         index_list = []
         data_list = []
         for row in new_data:
-            logger.info('>>> row>>> %s', row)
+            logger.debug('>>> row>>> %s', row)
 
             index = row[0]
             index_list.append(index)

@@ -6,7 +6,6 @@ from datetime import datetime
 from aiohttp import web
 
 from futuremaker import utils
-from futuremaker.telegram_bot_adapter import TelegramBotAdapter
 from futuremaker.bitmex.nexus import Nexus
 from futuremaker import nexus_mock
 from futuremaker.log import logger
@@ -35,10 +34,14 @@ class Bot(object):
         if not self.backtest:
             self.nexus = Nexus(exchange, symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
-            # self.telegram_bot = TelegramBotAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id,
-            #                                        expire_time=600)
+            # self.telegram = TelegramAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
+            self.telegram_bot_token = telegram_bot_token
+            self.telegram_chat_id = telegram_chat_id
         else:
             self.nexus = nexus_mock.Nexus(exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end)
+
+    def send_telegram(self, text):
+        asyncio.get_event_loop().create_task(self.mqueue.put(text))
 
     async def init(self):
         """
@@ -53,10 +56,15 @@ class Bot(object):
 
     async def schedule(self):
         """
-        반복적인 일이 있을때 구현한다.
+        메시지큐.
         :return:
         """
-        pass
+        while True:
+            try:
+                text = await self.mqueue.get()
+                await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+            except Exception as e:
+                logger.error('_consume error >> %s', e)
 
     def run(self, algo):
         self.nexus.callback(update_orderbook=algo.update_orderbook,
@@ -66,8 +74,10 @@ class Bot(object):
         # ccxt api 연결.
         algo.api = self.nexus.api
         algo.data = self.nexus.ws.data
+        algo.send_telegram = self.send_telegram
 
         loop = asyncio.get_event_loop()
+        self.mqueue = asyncio.Queue(loop=loop)
         try:
             logger.info('SYMBOL: %s', self.symbol)
             logger.info('CANDLE_PERIOD: %s', self.candle_period)

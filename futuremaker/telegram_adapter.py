@@ -4,18 +4,21 @@ import random
 import time
 
 import aiohttp
-# from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.bot import Bot
+from telegram.inline.inlinekeyboardbutton import InlineKeyboardButton
+from telegram.inline.inlinekeyboardmarkup import InlineKeyboardMarkup
 
 from futuremaker.collections import expiredict
 from futuremaker.log import logger
 
 
-class TelegramBotAdapter(object):
+class TelegramAdapter(object):
 
     def __init__(self, bot_id=None, bot_token=None, chat_id=None, message_handler={},
                  expire_time=60, expired_handler=None):
         if bot_token is None:
             logger.debug("Telegram Bot Disabled.")
+            self.enabled = True
             return
         if bot_id is None or bot_id == "":
             self.bot_id = str(random.randint(random.randint(1, 99), random.randint(100, 9999)))
@@ -31,13 +34,13 @@ class TelegramBotAdapter(object):
         else:
             self.question_tmp = expiredict(expire_time=expire_time,
                                            expired_callback=self.expired_question)
-        self._watch_update()
+        self.enabled = False
 
     def expired_question(self, question):
         self._bot.edit_message_text(chat_id=question["message"]["chat_id"],
-                                   message_id=question["message"]["message_id"],
-                                   text=f"{question['message']['text']}\n결과 >> 시간초과",
-                                   parse_mode="HTML")
+                                    message_id=question["message"]["message_id"],
+                                    text=f"{question['message']['text']}\n결과 >> 시간초과",
+                                    parse_mode="HTML")
 
     def send(self, text="", reply_markup=None):
         send_text = f"BOT ID: {self.bot_id}\n" + text
@@ -116,7 +119,7 @@ class TelegramBotAdapter(object):
             # ignore 요청의 두번 답을 말할경우.
             pass
 
-    def _watch_update(self):
+    def updater(self):
         async def get_update():
             async with aiohttp.ClientSession() as session:
                 offset = 0
@@ -156,5 +159,4 @@ class TelegramBotAdapter(object):
                                         logger.error("key error", KeyError)
                     # 한번씩 쉬면서 대화 내용 조회하기.
                     time.sleep(1)
-        loop = asyncio.get_event_loop()
-        loop.create_task(get_update())
+        return get_update()
