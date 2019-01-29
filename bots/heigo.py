@@ -15,7 +15,8 @@ class HeiGo(Algo):
 
     def __init__(self, params):
         self.symbol = params['symbol']
-        self.amount = params['amount'] # 계약 갯수.
+        self.amount = int(params['amount'])  # 계약 갯수.
+        self.stoploss = int(params['stoploss'])  # 손절범위. 달러.
         logger.info('%s created!', self.__class__.__name__)
 
         # 상태.
@@ -30,6 +31,19 @@ class HeiGo(Algo):
         logger.info('>> %s >> %s', datetime.fromtimestamp(df.index[-1] / 1000),
                     f"O:{candle['open']} H:{candle['high']} L:{candle['low']} C:{candle['close']} V:{candle['volume']}")
         logger.info('orders > %s', self.data['order'])
+
+        for order in self.data['order']:
+            # limit 주문만 수정. stop은 손절주문이므로 수정하지 않으며, update_position에서 수정함.
+            if order['ordType'] == 'Limit' and order['leavesQty'] > 0:
+                price = order['price']
+                if order['side'] == 'Sell':
+                    ## TODO 1.
+                    # 1. 진입주문이 멀어졌다면 취소해준다.
+                    # 2. 청산주문이 멀어졌다면 취소한다.
+                    # 로직?
+                    pass
+                elif order['side'] == 'Buy':
+                    pass
 
         hei = heikinashi(df)
         logger.info('Enter..')
@@ -47,9 +61,54 @@ class HeiGo(Algo):
     def update_position(self, position):
         logger.info('update_position > %s', position)
         self.s['current_qty'] = position['currentQty']
+        current_qty = self.s['current_qty']
+
+        if current_qty == 0:
+            # stop모두 취소.
+            for order in self.data['order']:
+                # limit 주문만 수정. stop은 손절주문이므로 수정하지 않으며, update_position에서 수정함.
+                if order['ordType'] == 'Stop':
+                    order_id = order['orderID']
+                    self.api.cancel_order(id=order_id, symbol=symbol)
+            return
+
         if 'avgEntryPrice' in position:
             if position['avgEntryPrice']:
                 self.s['entry_price'] = position['avgEntryPrice']
+                if current_qty > 0:
+                    # 롱 포지션은 아래쪽에 Sell을 예약한다.
+                    stop_price = round(self.s['entry_price'] - self.stoploss)
+                    found = False
+                    for order in self.data['order']:
+                        # limit 주문만 수정. stop은 손절주문이므로 수정하지 않으며, update_position에서 수정함.
+                        if order['ordType'] == 'Stop' and order['side'] == 'Sell':
+                            order_id = order['orderID']
+                            self.api.edit_order(id=order_id, symbol=symbol, type='Stop', side='Buy',
+                                                amount=abs(current_qty),
+                                                params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                            found = True
+                            break
+                    if not found:
+                        self.api.create_order(symbol, type='Stop', side='Buy',
+                                              amount=abs(current_qty),
+                                              params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                elif current_qty < 0:
+                    # 숏 포지션은 위쪽에 Buy를 예약한다.
+                    stop_price = round(self.s['entry_price'] + self.stoploss)
+                    found = False
+                    for order in self.data['order']:
+                        # limit 주문만 수정. stop은 손절주문이므로 수정하지 않으며, update_position에서 수정함.
+                        if order['ordType'] == 'Stop' and order['side'] == 'Buy':
+                            order_id = order['orderID']
+                            self.api.edit_order(id=order_id, symbol=symbol, type='Stop', side='Sell',
+                                              amount=abs(current_qty),
+                                              params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
+                            found = True
+                            break
+                    if not found:
+                        self.api.create_order(symbol, type='Stop', side='Sell',
+                                              amount=abs(current_qty),
+                                              params={'execInst': 'Close,LastPrice', 'stopPx': stop_price})
 
     def enter(self, df, hei):
         # 포지션이 없을때만
@@ -72,7 +131,6 @@ class HeiGo(Algo):
 
     def leave(self, df, hei):
         N = 3  # 3개의 연속 가격을 확인하여 익절.
-
         close = hei.HA_Close.iloc[-1]
         if self.s['current_qty'] < 0:
             # 숏 청산.
@@ -95,14 +153,14 @@ class HeiGo(Algo):
     def buy_orderbook1(self, amount):
         bid1 = self.data['orderBook10'][0]['bids'][0]
         limit_price, limit_volume = bid1[0], bid1[1]
-        self.api.createOrder(symbol, type='limit', side='buy',
+        self.api.create_order(symbol, type='limit', side='buy',
                              price=limit_price, amount=abs(amount),
                              params={'execInst': 'ParticipateDoNotInitiate'})
 
     def sell_orderbook1(self, amount):
         ask1 = self.data['orderBook10'][0]['asks'][0]
         limit_price, limit_volume = ask1[0], ask1[1]
-        self.api.createOrder(symbol, type='limit', side='sell',
+        self.api.create_order(symbol, type='limit', side='sell',
                              price=limit_price, amount=abs(amount),
                              params={'execInst': 'ParticipateDoNotInitiate'})
 
@@ -128,7 +186,9 @@ if __name__ == '__main__':
     exchange = params['exchange']
     symbol = params['symbol']
     candle_period = params['period']
+    amount = params['amount']
     leverage = params['leverage']
+    stoploss = params['stoploss']
     http_port = params['http_port']
     backtest = params['backtest'] == 'True'
     test_start = params['test_start']
@@ -148,7 +208,8 @@ if __name__ == '__main__':
     bot = Bot(exchange=exchange, symbol=symbol, leverage=leverage, candle_limit=candle_limit,
               candle_period=candle_period, api_key=api_key, api_secret=api_secret,
               testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
-              telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start, test_end=test_end)
+              telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start,
+              test_end=test_end)
 
     algo = HeiGo(params)
     bot.run(algo)
