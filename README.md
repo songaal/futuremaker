@@ -4,6 +4,11 @@ Futuremaker is a progressive cryptocurrency algorithm trading library based on P
 
 Check [latest version](https://pypi.org/project/futuremaker/) at pypi. 
 
+## How to install
+
+```
+$ pip install futuremaker
+```
 
 ## Supported Exchanges
 
