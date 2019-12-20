@@ -1,10 +1,7 @@
-import os
 import unittest
 
-import bitmex
-
 from futuremaker import utils
-from futuremaker.bitmex.nexus import Nexus
+from futuremaker.nexus import Nexus
 
 
 class TestNexus(unittest.TestCase):

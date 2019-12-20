@@ -6,11 +6,11 @@ from futuremaker.log import logger
 
 class Nexus(object):
 
-    def __init__(self, exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end):
+    def __init__(self, api, symbol, leverage, candle_limit, candle_period, test_start, test_end):
         self.candle_handler = None
         self.symbol = symbol
         self.leverage = leverage
-        self.api = utils.ccxt_exchange(exchange, is_async=True)
+        self.api = api
 
         self.candle_limit = candle_limit
         self.candle_period = candle_period

@@ -4,6 +4,7 @@ import sys
 
 from futuremaker import indicators, utils
 from futuremaker.algo import Algo
+from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.bot import Bot
 from futuremaker.log import logger
 import talib as ta
@@ -85,10 +86,17 @@ if __name__ == '__main__':
     testnet = os.getenv('TESTNET') == 'True'
     dry_run = os.getenv('DRY_RUN') == 'True'
 
-    bot = Bot(exchange=exchange, symbol=symbol, leverage=leverage, candle_limit=candle_limit,
-              candle_period=candle_period, api_key=api_key, api_secret=api_secret,
-              testnet=testnet, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
-              telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start, test_end=test_end)
+    api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
+    api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
+    ws = BitmexWS(symbol, candle_period,
+                  api_key=api_key,
+                  api_secret=api_secret,
+                  testnet=testnet)
+
+    bot = Bot(api, ws, symbol=symbol, leverage=leverage, candle_limit=candle_limit,
+              candle_period=candle_period, dry_run=dry_run, telegram_bot_token=telegram_bot_token,
+              telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start,
+              test_end=test_end)
 
     algo = AlertGo(params)
     bot.run(algo)

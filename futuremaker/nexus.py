@@ -15,28 +15,29 @@ class Nexus(object):
     nexus.api.put_order() 와 같이 사용.
     """
 
-    def __init__(self, exchange, symbol, leverage=None, api_key=None, api_secret=None, testnet=True, dry_run=False,
+    def __init__(self, api, ws, symbol, leverage=None, api_key=None, api_secret=None, testnet=True, dry_run=False,
                  candle_limit=None, candle_period=None):
         """
-        :param exchange: 거래소이름. bitmex, bithumb..
         :param symbol: 심볼페어. XBTUSD, BTC/USD
         :param dry_run: 참일 경우 실제 주문 api를 호출하지 않는다.
         :param candle_limit: 저장할 최대 캔들갯수.
         :param candle_period: 봉주기. Bitmex는 4가지만 지원한다. 1m, 5m, 1h, 1d
         """
-        self.exchange = exchange
+        exchange = 'bitmex'
         self.candle_handler = None
+        self.api = api
+        self.ws = ws
         # raw_symbol = symbol.replace('/', '')
-        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
-        if api_key and api_secret and self.api and leverage is not None:
-            self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
+        # self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
+        # if api_key and api_secret and self.api and leverage is not None:
+        #     self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
 
         logger.info('>>candle_period>> %s',candle_period)
             # 웹소켓 처리기.
-        self.ws = BitmexWS(symbol, candle_period,
-                           api_key=api_key,
-                           api_secret=api_secret,
-                           testnet=testnet)
+        # self.ws = BitmexWS(symbol, candle_period,
+        #                    api_key=api_key,
+        #                    api_secret=api_secret,
+        #                    testnet=testnet)
 
         if candle_limit and candle_period:
             period_in_second = 0
