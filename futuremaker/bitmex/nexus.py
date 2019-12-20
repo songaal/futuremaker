@@ -1,7 +1,7 @@
 import datetime
 
 from futuremaker import utils
-from futuremaker.bitmex_ws import BitmexWS
+from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.candle_handler import CandleHandler
 from futuremaker.log import logger
 
@@ -24,15 +24,16 @@ class Nexus(object):
         :param candle_limit: 저장할 최대 캔들갯수.
         :param candle_period: 봉주기. Bitmex는 4가지만 지원한다. 1m, 5m, 1h, 1d
         """
+        self.exchange = exchange
         self.candle_handler = None
-        raw_symbol = symbol.replace('/', '')
-        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, opt={'test':testnet})
+        # raw_symbol = symbol.replace('/', '')
+        self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
         if api_key and api_secret and self.api and leverage is not None:
-            self.api.private_post_position_leverage({'symbol': raw_symbol, 'leverage': leverage})
+            self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
 
         logger.info('>>candle_period>> %s',candle_period)
             # 웹소켓 처리기.
-        self.ws = BitmexWS(raw_symbol, candle_period,
+        self.ws = BitmexWS(symbol, candle_period,
                            api_key=api_key,
                            api_secret=api_secret,
                            testnet=testnet)

@@ -16,7 +16,7 @@ from futuremaker.log import logger
 import ccxt
 import ccxt.async_support as ccxt_async
 
-def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, opt={}):
+def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, testnet=False, opt={}):
 
     if api_key is not None and api_secret is not None:
         opt.update({
@@ -28,6 +28,10 @@ def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, opt={}
         api = getattr(ccxt_async, exchange)(opt)
     else:
         api = getattr(ccxt, exchange)(opt)
+
+    # Bitmex 용도..
+    if testnet:
+        api.urls['api'] = api.urls['test']
 
     api.substituteCommonCurrencyCodes = False
 
@@ -171,11 +175,13 @@ def _extract_topic(topic_request):
     return list
 
 
-async def send_telegram(telegram_bot_token, chat_id, text):
-    url = 'https://api.telegram.org/bot' + telegram_bot_token + '/sendMessage'
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params={
-            'chat_id': chat_id,
-            'text': text,
-        }) as response:
-            return await response.text()
+async def send_telegram(telegram_bot_token, telegram_chat_id, text):
+    if telegram_bot_token and telegram_chat_id:
+        logger.info('Telegram %s [%s] [%s]', text, telegram_chat_id, telegram_bot_token)
+        url = 'https://api.telegram.org/bot' + telegram_bot_token + '/sendMessage'
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params={
+                'chat_id': telegram_chat_id,
+                'text': text,
+            }) as response:
+                return await response.text()

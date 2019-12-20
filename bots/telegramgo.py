@@ -2,7 +2,7 @@ import os
 import sys
 
 from futuremaker import indicators, utils
-from futuremaker.bitmex.bot import Bot
+from futuremaker.bot import Bot
 from futuremaker.log import logger
 import talib as ta
 

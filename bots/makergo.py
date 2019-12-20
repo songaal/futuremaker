@@ -4,28 +4,14 @@ import datetime
 
 from ccxt import ExchangeError
 
-from futuremaker import indicators, utils
-from futuremaker.bitmex.bot import Bot
+from futuremaker import utils
+from futuremaker.bot import Bot
 from futuremaker.log import logger
 
 
-class AlertGo(Bot):
+class MakerGo(Bot):
 
-    def __init__(self, params):
-        symbol = 'XBTUSD'
-        leverage = 10
-        candle_limit = 5
-        candle_period = '1m'
-        api_key = os.getenv('API_KEY')
-        api_secret = os.getenv('API_SECRET')
-        testnet = os.getenv('TESTNET') == 'True'
-        dry_run = os.getenv('DRY_RUN') == 'True'
-        # chat_id = os.getenv('CHAT_ID')
-        # telegram_bot_token=None, telegram_chat_id=None, http_port=None
-        super(AlertGo, self).__init__(symbol=symbol, leverage=leverage, candle_limit=candle_limit,
-                                      candle_period=candle_period, api_key=api_key, api_secret=api_secret,
-                                      testnet=testnet, dry_run=dry_run)
-
+    def __init__(self):
         self.count = 0
         self.position = "NTL"
         self.start_time = datetime.datetime.now()
@@ -234,5 +220,13 @@ class AlertGo(Bot):
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    bot = AlertGo(params)
-    bot.run()
+    bot = Bot(exchange='bitmex', symbol='XBT/USD', candle_limit=20,
+              candle_period='1m', testnet=True,
+              api_key='05y_4aALSt-BrVgnNhSfhppP', api_secret=params['api_secret'],
+              # leverage=1,
+              # dry_run=dry_run, telegram_bot_token=telegram_bot_token,
+              # telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start,
+              # test_end=test_end
+              )
+    algo = MakerGo(params)
+    bot.run(algo)

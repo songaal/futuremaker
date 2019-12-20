@@ -1,7 +1,7 @@
 import unittest
 
 from futuremaker import utils
-from futuremaker.bitmex_ws import BitmexWS
+from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.log import logger
 
 

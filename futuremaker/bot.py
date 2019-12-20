@@ -14,7 +14,7 @@ from futuremaker.log import logger
 
 class Bot(object):
     """
-    봇 알고리즘.
+    봇.
     nexus 객체를 가지고 있으며 다음과 같이 사용가능하다.
     nexus.api: 오더, 잔고, 히스토리 api 호출
     nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
@@ -23,27 +23,28 @@ class Bot(object):
     def __init__(self, exchange, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
                  testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None,
                  backtest=False, test_start=None, test_end=None):
+
         if not symbol:
             raise Exception('Symbol must be set.')
         if not candle_period:
             raise Exception('candle_period must be set. 1m, 5m,..')
 
+        self.exchange = exchange
         self.symbol = symbol
         self.candle_period = candle_period
         self.http_port = http_port
         self.backtest = backtest
         if not self.backtest:
-            self.nexus = Nexus(exchange, symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
+            self.nexus = Nexus(self.exchange, symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
             # self.telegram = TelegramAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
             self.telegram_bot_token = telegram_bot_token
             self.telegram_chat_id = telegram_chat_id
         else:
-            self.nexus = nexus_mock.Nexus(exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end)
+            self.nexus = nexus_mock.Nexus(self.exchange, symbol, leverage, candle_limit, candle_period, test_start, test_end)
 
     def send_telegram(self, text):
         coro = utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-        logger.info('Telegram %s [%s] [%s]', text, self.telegram_chat_id, self.telegram_bot_token)
         asyncio.get_event_loop().create_task(coro)
 
     async def init(self):
@@ -89,7 +90,7 @@ class Bot(object):
             logger.info('ENV[TZ]: %s', os.getenv("TZ"))
             logger.info('LOGLEVEL: %s', os.getenv("LOGLEVEL"))
             logger.info('TZNAME: %s', time.tzname)
-            ip_address = requests.get('http://ip.42.pl/raw').text
+            ip_address = requests.get('https://api.ipify.org?format=json').json()['ip']
             logger.info('IP: %s', ip_address)
             logger.info('Loading...')
             self.send_telegram('Futuremaker Bot started.. {}'.format(ip_address))
