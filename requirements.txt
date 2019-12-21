@@ -9,3 +9,4 @@ matplotlib
 wheel
 python-telegram-bot
 bitfinex-api-py
+jupyter

@@ -15,6 +15,7 @@ bfx = Client(
     logLevel='DEBUG'
 )
 
+
 async def create_order():
     """
     주문 타입.
@@ -35,10 +36,10 @@ async def create_order():
     # response is in the form of a Notification object
     for o in response.notify_info:
         # each item is in the form of an Order object
-        print ("Order: ", o)
+        print("Order: ", o)
 
 async def cancel_order():
-    response = await bfx.rest.submit_cancel_order(1185510865)
+    response = await bfx.rest.submit_cancel_order(36142184891)
     # response is in the form of a Notification object
     # notify_info is in the form of an order object
     print ("Order: ", response.notify_info)
