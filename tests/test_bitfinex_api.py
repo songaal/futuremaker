@@ -3,19 +3,11 @@ import sys
 from bfxapi import Client, Order
 import ssl
 
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
-    pass
-else: # Handle target environment that doesn't support HTTPS verification
-    ssl._create_default_https_context = _create_unverified_https_context
-
 symbol = 'tBTCUSD'
 bfx = Client(
     API_KEY=os.getenv('API_KEY'),
     API_SECRET=os.getenv('API_SECRET'),
-    logLevel='DEBUG'
+    logLevel='INFO'
 )
 print('API_KEY: {}'.format(os.getenv('API_KEY')))
 print('API_SECRET: {}'.format(os.getenv('API_SECRET')))
