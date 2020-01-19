@@ -3,13 +3,13 @@ import pprint
 import pandas as pd
 import numpy as np
 import datetime
-
+interval = '5'
 client = bybit.bybit(test=True, api_key="", api_secret="")
 print(client.Symbol.Symbol_get().result()[0]["result"][0])
 
 kline_get_kwargs = {
     'symbol': 'BTCUSD',
-    'interval': 'D',
+    'interval': interval,
     'from': '1561986000',
 #     2019.10.1 >> 1569934800
 #     2019.7.1 >> 1561986000
@@ -27,5 +27,5 @@ df['low'] = df['low'].astype(float)
 df['close'] = df['close'].astype(float)
 df['volume'] = df['volume'].astype(float)
 
-df.to_csv('6M.csv', mode='w')
+df.to_csv(interval + '.csv', mode='w')
 print('Done')

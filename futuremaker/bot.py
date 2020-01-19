@@ -20,9 +20,9 @@ class Bot(object):
     nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
     """
 
-    def __init__(self, api, ws, symbol, leverage=None, candle_limit=20, candle_period='1m', api_key=None, api_secret=None,
-                 testnet=True, dry_run=False, telegram_bot_token=None, telegram_chat_id=None, http_port=None,
-                 backtest=False, test_start=None, test_end=None):
+    def __init__(self, api, symbol, candle_limit=20, candle_period='1m',
+                 testnet=True, dry_run=False, http_port=None,
+                 backtest=False, test_start=None, test_end=None, test_data=None):
 
         if not symbol:
             raise Exception('Symbol must be set.')
@@ -30,22 +30,26 @@ class Bot(object):
             raise Exception('candle_period must be set. 1m, 5m,..')
 
         # self.exchange = exchange
+        self.api = api
         self.symbol = symbol
         self.candle_period = candle_period
         self.http_port = http_port
         self.backtest = backtest
+        self.telegram_bot_token = None
+        self.telegram_chat_id = None
+
         if not self.backtest:
-            self.nexus = Nexus(api, ws, symbol, leverage=leverage, api_key=api_key, api_secret=api_secret, testnet=testnet,
+            self.nexus = Nexus(api, symbol, testnet=testnet,
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
             # self.telegram = TelegramAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
-            self.telegram_bot_token = telegram_bot_token
-            self.telegram_chat_id = telegram_chat_id
         else:
-            self.nexus = nexus_mock.Nexus(ws, symbol, leverage, candle_limit, candle_period, test_start, test_end)
+            self.nexus = nexus_mock.Nexus(api, symbol, candle_limit, candle_period, test_start, test_end=None, test_data=test_data)
+
 
     def send_telegram(self, text):
-        coro = utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-        asyncio.get_event_loop().create_task(coro)
+        if self.telegram_bot_token and self.telegram_chat_id:
+            coro = utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+            asyncio.get_event_loop().create_task(coro)
 
     async def init(self):
         """
@@ -78,7 +82,7 @@ class Bot(object):
                             update_position=algo.update_position)
         # ccxt api 연결.
         algo.api = self.nexus.api
-        algo.data = self.nexus.ws.data
+        algo.data = self.nexus.api.data
         algo.send_telegram = self.send_telegram
 
         loop = asyncio.get_event_loop()

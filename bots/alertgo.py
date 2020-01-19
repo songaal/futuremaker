@@ -7,7 +7,6 @@ from futuremaker.algo import Algo
 from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.bot import Bot
 from futuremaker.log import logger
-import talib as ta
 
 VERSION = '1.0.0'
 
@@ -29,11 +28,9 @@ class AlertGo(Algo):
         low = round(l.iloc[-1], 2)
         logger.info('BBands high[%s] price[%s] low[%s]', high, price, low)
         df = indicators.RSI(df, period=14)
-        rsi2 = ta.RSI(df.Close.values)
         rsi = df.RSI.iloc[-1]
         rsi = round(rsi, 2)
-        rsi2 = round(rsi2[-1], 2)
-        logger.info('RSI[%s] RSI2[%s]', rsi, rsi2)
+        logger.info('RSI[%s]', rsi)
 
         score = 0
         if price >= high:

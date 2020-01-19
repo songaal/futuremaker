@@ -6,7 +6,7 @@ import datetime
 
 import pandas as pd
 # df = pd.read_csv('90d.csv')
-df = pd.read_csv('6M.csv')
+df = pd.read_csv('5m,.csv')
 
 df['range'] = (df['high'] - df['low']) * 0.5
 df['range_shift1'] = df['range'].shift(1)
@@ -40,6 +40,7 @@ def short_sell_price(x):
 # 롱타겟
 # df['high'] > df['long_target'
 df['sell_price'] = df.apply(lambda x: long_sell_price(x), axis=1)
+df['sell_price'] = df['close']
 df['ror'] = np.where(df['high'] > df['long_target'], df['sell_price'] / df['long_target'], 1)
 df['pnl'] = df['sell_price'] - df['long_target']
 df['profit%'] = df['pnl'] / df['long_target']
@@ -47,17 +48,13 @@ df['profit%'] = df['pnl'] / df['long_target']
 # 숏타켓
 # df['low'] < df['short_target']
 df['sell_price'] = df.apply(lambda x: short_sell_price(x), axis=1)
+df['sell_price'] = df.apply(lambda x: short_sell_price(x), axis=1)
 df['ror'] = np.where(df['low'] < df['short_target'], df['short_target'] / df['sell_price'], 1)
 df['pnl'] = df['short_target'] - df['sell_price']
 df['profit%'] = df['pnl'] / df['short_target']
 
-df['hpr'] = df['ror'].cumprod()
+
 
 df['cumprod'] = df['ror'].cumprod()
-df['dd'] = (df['hpr'].cummax() - df['hpr']) / df['hpr'].cummax() * 100
-
 
 print(df[['date', 'open', 'high', 'long_target', 'short_price', 'close', 'sell_price', 'profit%', 'pnl', 'ror', 'cumprod']].to_string())
-
-print("MDD: ", df['dd'].max())
-print("HPR: ", df['hpr'][-2])

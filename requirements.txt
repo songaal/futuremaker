@@ -4,7 +4,6 @@ aiohttp
 pandas
 pytz
 telegram
-ccxt
 matplotlib
 wheel
 python-telegram-bot
@@ -12,3 +11,4 @@ bitfinex-api-py
 jupyter
 mpl_finance
 bybit
+python-binance

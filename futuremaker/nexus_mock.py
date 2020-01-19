@@ -1,21 +1,23 @@
+import datetime
+
 import pandas as pd
 
 from futuremaker import utils, data_ingest
 from futuremaker.log import logger
-
+import os
 
 class Nexus(object):
 
-    def __init__(self, api, symbol, leverage, candle_limit, candle_period, test_start, test_end):
+    def __init__(self, api, symbol, candle_limit, candle_period, test_start=None, test_end=None, test_data=None):
+        self.api = api
         self.candle_handler = None
         self.symbol = symbol
-        self.leverage = leverage
-        self.api = api
 
         self.candle_limit = candle_limit
         self.candle_period = candle_period
         self.test_start = test_start
         self.test_end = test_end
+        self.test_data = test_data
 
     def callback(self, update_candle=None, **kwargs):
         """
@@ -43,13 +45,7 @@ class Nexus(object):
 
     async def load(self):
         try:
-            # await
-            self.api.load_markets()
-
-            # _, filepath = await
-            _, filepath = data_ingest.ingest_data(self.api, self.symbol, self.test_start, self.test_end,
-                                                        self.candle_period, self.candle_limit, reload=True)
-            self.candle_handler = CandleHandler(filepath, self.candle_limit)
+            self.candle_handler = CandleHandler(self.test_data, self.candle_limit)
             self.candle_handler.load()
         except:
             utils.print_traceback()
@@ -70,9 +66,16 @@ class CandleHandler(object):
         self._seq = 0
         self._size = 0
 
+    def date_parse(time_in_secs):
+        return datetime.datetime.fromtimestamp(float(time_in_secs))
+
     def load(self):
-        self._data = pd.read_csv(self.filepath, index_col='Index',
-                                 usecols=['Index', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        print(f'Load data: {os.path.abspath(self.filepath)}')
+        self._data = pd.read_csv(self.filepath, index_col='time',
+                                 usecols=['time', 'open', 'high', 'low', 'close', 'volume'],
+                                 parse_dates=['time'],
+                                 date_parser=lambda epoch: pd.to_datetime(epoch, unit='s')
+                                 )
         self._size = len(self._data.index)
 
     def update(self):

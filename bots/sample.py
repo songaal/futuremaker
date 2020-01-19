@@ -4,30 +4,37 @@ from futuremaker import utils
 from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.bot import Bot
 from futuremaker.algo import Algo
-
+import pandas as pd
 
 class AlertGo(Algo):
 
     def update_candle(self, df, candle):
-        print('update_candle %s > ', df.index[-1], df.iloc[-1], candle)
+        print('update_candle > ', df.index[-1], candle.name)
+        print(candle)
+
+
+class ExchangeAPI:
+    def __init__(self):
+        self.data = {}
 
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    api = utils.ccxt_exchange('bitmex', api_key='05y_4aALSt-BrVgnNhSfhppP', api_secret=params['api_secret'],
-                              is_async=False, testnet=True)
-    # api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
-    ws = BitmexWS('XBT/USD', candle_period='1m',
-                  api_key='05y_4aALSt-BrVgnNhSfhppP', api_secret=params['api_secret'],
-                  testnet=True)
 
-    bot = Bot(api, ws, symbol='XBT/USD', candle_limit=20,
-              candle_period='1m', testnet=True,
-              api_key='05y_4aALSt-BrVgnNhSfhppP', api_secret=params['api_secret'],
-              # leverage=1,
-              # dry_run=dry_run, telegram_bot_token=telegram_bot_token,
-              # telegram_chat_id=telegram_chat_id, http_port=http_port, backtest=backtest, test_start=test_start,
-              # test_end=test_end
+
+    # api 에 key와 secret 을 모두 셋팅.
+    # api 는 오더도 가능하지만 캔들정보도 확인가능. 1분마다 확인.
+    api = None
+
+    # telegram_bot_token=telegram_bot_token,
+    # telegram_chat_id=telegram_chat_id,
+    alert = None
+    api = ExchangeAPI()
+
+    bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7,
+              candle_period='1h',
+              backtest=True, test_start='2019-01-01',
+              test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
               )
 
     algo = AlertGo()
