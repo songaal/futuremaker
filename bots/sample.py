@@ -27,7 +27,13 @@ class AlertGo(Algo):
         self.prev_week_candle = None
         self.week_candle = {'open': -1, 'high': -1, 'low': -1}
 
+
     def prepare_week_candle(self, df):
+        pass
+
+        # print('Prev week high, low > ', high, low)
+
+    def prepare_week_candle_old(self, df):
         status = 0
         high = -1
         low = -1
@@ -54,10 +60,10 @@ class AlertGo(Algo):
     def update_candle(self, df, candle):
         if not self.started:
             # 초기화
-            high, low = self.prepare_week_candle(df)
-            print('Prev week high, low > ', high, low)
+            self.prepare_week_candle(df)
             self.started = True
         else:
+            # df.iloc[-1].
             pass
             # 하나씩 지표들을 완성해감.
 
