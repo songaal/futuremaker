@@ -19,101 +19,67 @@ class Yoil:
 class AlertGo(Algo):
 
     def __init__(self):
-        self.start_week = Yoil.TUE
-        self.rate = 0.4
+        self.week_start = Yoil.TUE
+        self.hour_start = 0
+        self.long_rate = 0.4
+        self.short_rate = 0.4
 
         self.started = False
         self.this_week = -1
         self.prev_week_candle = None
         self.week_candle = {'open': -1, 'high': -1, 'low': -1}
+        self.count = 0
 
-    def prepare_week_candle(self, df):
-
-        this_week = -1
-        week_open_price = np.NaN
-        high = np.NaN
-        low = np.NaN
-        upper_price = np.NaN
-        bottom_price = np.NaN
-
-        df['week_low'] = np.NaN
-        for i in range(len(df.index)):
-            candle = df.iloc[i]
-            dayofweek = df.index[i].dayofweek
-            if this_week != dayofweek:
-                this_week = dayofweek
-                if dayofweek == self.start_week:
-                    week_open_price = candle.open
-                    # 새로 한주가 시작되었다면 이전에 만들어 놓은 high, low를 돌파변수로 이용한다.
-                    volatility = high - low
-                    high = np.NaN
-                    low = np.NaN
-                    upper_price = week_open_price + self.rate * volatility
-                    bottom_price = week_open_price - self.rate * volatility
-                    print('WEEK OPENED > ', df.index[i], ', week: ', this_week, ', week_open_price: ', week_open_price,
-                          ', volat: ', volatility)
-            # print(df.index[i], 'WEEK OPEN: ',  week_open_price, ', VOLAT: ', volatility)
-            # print(df.index[i], ' UPPER: ',upper_price, ', BOTTOM: ', bottom_price)
-            # print(df.index[i], candle)
-            high = np.nanmax([high, candle.high])
-            low = np.nanmin([low, candle.low])
-            # print(i, df.index[i], candle.high, candle.low, high, low)
-            # print('----')
-            # if i == 5000:
-            #     break
-
-    def make_indicator(self, candle):
-        today = candle.name
-        if self.this_week != today.dayofweek:
-            # new week 셋팅
-            self.this_week = today.dayofweek
-            self.prev_week_candle = self.week_candle
-            print('New Week! > ', today)
-            print('Prev Week candle > ', self.prev_week_candle)
-            self.week_candle = {'open': candle.open, 'high': -1, 'low': -1}
-        else:
-            self.week_candle['high'] = max(self.week_candle['high'], candle.high)
-            self.week_candle['low'] = max(self.week_candle['low'], candle.low)
-        # if today.dayofweek == Yoil.MON:
-        # if today.hour == 0:
-        # 주봉 시작
-        #
-        # print('update_candle > ', df.index[-1])
-        # print('월요일!!!!')
-        # print(candle)
-
-    def prepare_week_candle_old(self, df):
-        status = 0
-        high = -1
-        low = -1
-        for i in range(len(df.index)):
-            row = df.iloc[-1 - i - 1]
-            date = row.name
-            if date.dayofweek == self.start_week:
-                status = 1
-                target = Yoil.SUN if self.start_week == Yoil.MON else self.start_week - 1
-
-            if status == 1:
-                if date.dayofweek == target:
-                    status = 2
-
-            if status == 2:
-                # candle value check
-                high = max(high, row.high)
-                low = min(low, row.low)
-
-                if date.dayofweek == self.start_week and date.hour == 0:
-                    # 마지막 봉.
-                    return high, low
+        self.week_open_price = np.NaN
+        self.week_high = np.NaN
+        self.week_low = np.NaN
+        self.long_price = np.NaN
+        self.short_price = np.NaN
 
     def update_candle(self, df, candle):
         if not self.started:
             # 초기화
-            self.prepare_week_candle(df)
+            self.prepare_indicator(df)
             self.started = True
+            # sys.exit(1)
         else:
             # 하나씩 지표들을 완성해감.
-            self.make_indicator(candle)
+            index = df.index[-1]
+            self.append_indicator(index, df, candle)
+        #     self.count += 1
+        #     if self.count > 2000:
+        #         sys.exit(1)
+
+    def prepare_indicator(self, df):
+        # 1. 돌파가격을 계산한다.
+        for i in range(len(df.index)):
+            index = df.index[i]
+            candle = df.iloc[i]
+            self.append_indicator(index, df, candle)
+        print(df)
+
+    def append_indicator(self, index, df, candle):
+        today = candle.name
+        if today.hour == self.hour_start and today.dayofweek == self.week_start:
+            # week 의 시작을 만나고 기준시각일때 한번만 계산.
+            self.week_open_price = candle.open
+            # 새로 한주가 시작되었다면 이전에 만들어 놓은 high, low를 돌파변수로 이용한다.
+            volatility = self.week_high - self.week_low
+            self.week_high = np.NaN
+            self.week_low = np.NaN
+            self.long_price = self.week_open_price + self.long_rate * volatility
+            self.short_price = self.week_open_price - self.short_rate * volatility
+            print('WEEK OPENED > ', index, ', week_open_price: ', self.week_open_price, ', volat: ', volatility)
+
+        # 매시간 계산.
+        self.week_high = np.nanmax([self.week_high, candle.high])
+        self.week_low = np.nanmin([self.week_low, candle.low])
+
+        # 2. 돌파가격 리스트를 시리즈로 넣는다.
+        df.loc[index, 'week_open_price'] = self.week_open_price
+        df.loc[index, 'long_break'] = self.long_price
+        df.loc[index, 'short_break'] = self.short_price
+        # print(index, candle.high, candle.low, self.week_open_price, self.long_price, self.short_price)
 
 
 class ExchangeAPI:
