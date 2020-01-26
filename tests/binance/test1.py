@@ -46,7 +46,7 @@ axes[0].get_xaxis().set_visible(False)
 from mpl_finance import candlestick_ohlc
 
 x = np.arange(len(df.index))
-ohlc = df2[['open', 'high', 'low', 'close']].astype(int).values
+ohlc = df[['open', 'high', 'low', 'close']].astype(int).values
 dohlc = np.hstack((np.reshape(x, (-1, 1)), ohlc))
 
 print(dohlc)
