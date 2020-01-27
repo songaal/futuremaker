@@ -107,6 +107,10 @@ class AlertGo(Algo):
 
         self.weekIndicator = WeekIndicator(week_start, hour_start, long_rate, short_rate)
 
+    # TODO
+    # 1. 손절하도록. 손절하면 1일후에 집입토록.
+    # 2. MDD 측정. 손익비 측정.
+    # 3. long rate, short rate 다르게 테스트..
     def update_candle(self, df, candle):
         time = candle.name
         candle = self.weekIndicator.update(df, candle)
@@ -187,9 +191,14 @@ if __name__ == '__main__':
     alert = None
     api = ExchangeAPI()
 
+    # 2019 결과
+    # SUMMARY TOT_PROFIT: 11654 TOT_TRADE: 19 WIN%: 57.9%
+    # 2018 결과
+    # SUMMARY TOT_PROFIT: 9768 TOT_TRADE: 20 WIN%: 55.0%
+
     bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
               candle_period='1h',
-              backtest=True, test_start='2019-01-01',
+              backtest=True, test_start='2018-01-01', test_end='2018-12-31',
               test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
               )
 

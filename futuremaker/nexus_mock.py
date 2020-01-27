@@ -36,7 +36,7 @@ class Nexus(object):
                 # skip
                 return 0
 
-            if self.test_end is not None and candle_df.index[-1] > self.test_start:
+            if self.test_end is not None and candle_df.index[-1] > self.test_end:
                 # skip
                 return 0
 
