@@ -104,6 +104,7 @@ class Bot(object):
             scheduled_task = loop.create_task(self.schedule())
             if self.http_port and not self.backtest:
                 server_task = loop.create_task(self._run_server())
+
             async def go():
                 await nexus_start
             loop.run_until_complete(go())

@@ -29,16 +29,17 @@ class Nexus(object):
 
     def _update_candle(self):
         candle_df = self.candle_handler.update()
-        if self.test_start is not None and candle_df.index[-1] < self.test_start:
-            # skip
-            return 0
-
-        if self.test_end is not None and candle_df.index[-1] > self.test_start:
-            # skip
-            return 0
 
         # 캔들업뎃호출
         if self.cb_update_candle and candle_df is not None:
+            if self.test_start is not None and candle_df.index[-1] < self.test_start:
+                # skip
+                return 0
+
+            if self.test_end is not None and candle_df.index[-1] > self.test_start:
+                # skip
+                return 0
+
             self.cb_update_candle(candle_df, candle_df.iloc[-1])
             return candle_df
 
