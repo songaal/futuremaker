@@ -100,7 +100,7 @@ class AlertGo(Algo):
         self.win_trade = 0
         self.lose_trade = 0
 
-        week_start = Yoil.TUE
+        week_start = Yoil.MON
         hour_start = 0
         long_rate = 0.4
         short_rate = 0.4

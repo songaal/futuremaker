@@ -17,6 +17,7 @@ class CandleHandler(object):
         self.history = history
         self.since = since
         self.datetime_format = '%Y-%m-%dT%H:%M:%S.%fZ'
+        self.candle = None
 
     # async
     def load(self):

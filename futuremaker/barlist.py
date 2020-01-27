@@ -22,7 +22,7 @@ class BarList:
         size = len(self.df.index)
         if size > self.history:
             start = size - self.history
-            self.df = self.df.iloc[start:]
+            self.df = self.df.iloc[start:].copy()
 
     def last_datetime(self):
         if len(self.datetime) > 0:

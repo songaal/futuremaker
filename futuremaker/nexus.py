@@ -27,6 +27,7 @@ class Nexus(object):
         self.candle_handler = None
         self.api = api
         self.ws = ws
+        self.cb_update_candle = None
         # raw_symbol = symbol.replace('/', '')
         # self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
         # if api_key and api_secret and self.api and leverage is not None:

@@ -1,10 +1,11 @@
-import datetime
+from datetime import datetime
 
 import pandas as pd
 
 from futuremaker import utils, data_ingest
 from futuremaker.log import logger
 import os
+
 
 class Nexus(object):
 
@@ -13,10 +14,11 @@ class Nexus(object):
         self.candle_handler = None
         self.symbol = symbol
 
+        self.cb_update_candle = None
         self.candle_limit = candle_limit
         self.candle_period = candle_period
-        self.test_start = test_start
-        self.test_end = test_end
+        self.test_start = datetime.strptime(test_start, '%Y-%m-%d') if test_start else None
+        self.test_end = datetime.strptime(test_end, '%Y-%m-%d') if test_end else None
         self.test_data = test_data
 
     def callback(self, update_candle=None, **kwargs):
@@ -27,6 +29,14 @@ class Nexus(object):
 
     def _update_candle(self):
         candle_df = self.candle_handler.update()
+        if self.test_start is not None and candle_df.index[-1] < self.test_start:
+            # skip
+            return 0
+
+        if self.test_end is not None and candle_df.index[-1] > self.test_start:
+            # skip
+            return 0
+
         # 캔들업뎃호출
         if self.cb_update_candle and candle_df is not None:
             self.cb_update_candle(candle_df, candle_df.iloc[-1])
@@ -66,8 +76,9 @@ class CandleHandler(object):
         self._seq = 0
         self._size = 0
 
+    @staticmethod
     def date_parse(time_in_secs):
-        return datetime.datetime.fromtimestamp(float(time_in_secs))
+        return datetime.fromtimestamp(float(time_in_secs))
 
     def load(self):
         print(f'Load data: {os.path.abspath(self.filepath)}')
@@ -80,6 +91,7 @@ class CandleHandler(object):
 
     def update(self):
         if self._seq + self.history <= self._size:
-            df = self._data.iloc[self._seq:self._seq + self.history]
+            # copy() 를 사용하지 않으면 SettingWithCopyWarning 가 발생하므로 꼭 사용.
+            df = self._data.iloc[self._seq:self._seq + self.history].copy()
             self._seq += 1
             return df
