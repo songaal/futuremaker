@@ -85,7 +85,7 @@ class WeekIndicator(IndicatorGenerator):
 
 class AlertGo(Algo):
 
-    def __init__(self):
+    def __init__(self, week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4):
         self.pyramiding = 1
         self.init_capital = 10000
         self.default_amount = self.init_capital * 0.8
@@ -99,11 +99,6 @@ class AlertGo(Algo):
         self.total_trade = 0
         self.win_trade = 0
         self.lose_trade = 0
-
-        week_start = Yoil.MON
-        hour_start = 0
-        long_rate = 0.4
-        short_rate = 0.4
 
         self.weekIndicator = WeekIndicator(week_start, hour_start, long_rate, short_rate)
 
@@ -191,16 +186,56 @@ if __name__ == '__main__':
     alert = None
     api = ExchangeAPI()
 
-    # 2019 결과
-    # SUMMARY TOT_PROFIT: 11654 TOT_TRADE: 19 WIN%: 57.9%
-    # 2018 결과
-    # SUMMARY TOT_PROFIT: 9768 TOT_TRADE: 20 WIN%: 55.0%
+    #### MON
+    # hour_start=0
+    # 2018 SUMMARY TOT_PROFIT: 9768 TOT_TRADE: 20 WIN%: 55.0%
+    # 2019 SUMMARY TOT_PROFIT: 11654 TOT_TRADE: 19 WIN%: 57.9%
+
+    # hour=4
+    # 2019 SUMMARY TOT_PROFIT: 11583 TOT_TRADE: 19 WIN%: 57.9%
+
+    # hour_start=9
+    # 2018 SUMMARY TOT_PROFIT: 9265 TOT_TRADE: 20 WIN%: 50.0%
+    # 2019 SUMMARY TOT_PROFIT: 7967 TOT_TRADE: 19 WIN%: 52.6%
+
+    # hour=12
+    # 2018 SUMMARY TOT_PROFIT: 5445 TOT_TRADE: 24 WIN%: 45.8%
+    # 2019 SUMMARY TOT_PROFIT: 12126 TOT_TRADE: 18 WIN%: 55.6%
+
+    # hour=17
+    # 2018 SUMMARY TOT_PROFIT: 7168 TOT_TRADE: 20 WIN%: 55.0%
+    # 2019 SUMMARY TOT_PROFIT: 12632 TOT_TRADE: 16 WIN%: 62.5%
+
+    # hour=23
+    # 2018 SUMMARY TOT_PROFIT: 5630 TOT_TRADE: 22 WIN%: 54.5%
+    # 2019 SUMMARY TOT_PROFIT: 11041 TOT_TRADE: 20 WIN%: 55.0%
+
+    #### WED
+    # hour=0
+    # 2018 SUMMARY TOT_PROFIT: 5901 TOT_TRADE: 21 WIN%: 47.6%
+    # 2019 SUMMARY TOT_PROFIT: 9571 TOT_TRADE: 20 WIN%: 45.0%
+
+    # hour=9
+    # 2019 SUMMARY TOT_PROFIT: 5579 TOT_TRADE: 26 WIN%: 38.5%
+
+    #### FRI
+    #hour=0
+    # 2019 SUMMARY TOT_PROFIT: 10600 TOT_TRADE: 16 WIN%: 56.2%
+    # hour=9
+    # 2019 SUMMARY TOT_PROFIT: 4777 TOT_TRADE: 24 WIN%: 41.7%
+
+    #### SUN
+    # hour=0
+    # 2019 SUMMARY TOT_PROFIT: 5573 TOT_TRADE: 20 WIN%: 45.0%
+
+    # hour=17
+    # 2019 SUMMARY TOT_PROFIT: 4617 TOT_TRADE: 22 WIN%: 40.9%
 
     bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
               candle_period='1h',
-              backtest=True, test_start='2018-01-01', test_end='2018-12-31',
+              backtest=True, test_start='2019-01-01', test_end='2019-12-31',
               test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
               )
 
-    algo = AlertGo()
+    algo = AlertGo(week_start=Yoil.MON, hour_start=23, long_rate=0.4, short_rate=0.4)
     bot.run(algo)
