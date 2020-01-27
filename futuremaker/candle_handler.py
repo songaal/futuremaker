@@ -37,11 +37,11 @@ class CandleHandler(object):
             index = row[0]
             index_list.append(index)
             data_list.append({
-                'Open': row[1],
-                'High': row[2],
-                'Low': row[3],
-                'Close': row[4],
-                'Volume': row[5],
+                'open': row[1],
+                'high': row[2],
+                'low': row[3],
+                'close': row[4],
+                'volume': row[5],
             })
 
         freq = utils.period_to_freq(self.period)

@@ -13,7 +13,7 @@ class BarList:
     def init(self, index_list, data_list):
         logger.debug('>> index_list >> %s', index_list)
         # dates = pd.DatetimeIndex(index_list, dtype='datetime64[ns]', freq=self.freq)
-        self.df = pd.DataFrame(data=data_list, index=index_list, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
+        self.df = pd.DataFrame(data=data_list, index=index_list, columns=['open', 'high', 'low', 'close', 'volume'])
 
     def update(self, timestamp, open, high, low, close, volume):
 

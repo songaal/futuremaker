@@ -1,4 +1,4 @@
-
+import logging
 
 class Algo(object):
     def __init__(self):
