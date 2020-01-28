@@ -94,23 +94,23 @@ class AlertGo(Algo):
         self.long_amount = 0
         self.long_entry_price = 0
         self.long_losscut_price = 0
-        # self.long_entry_time = None
         self.short_amount = 0
         self.short_entry_price = 0
         self.short_losscut_price = 0
-        # self.short_entry_time = None
         self.position_entry_time = datetime.fromtimestamp(0)
         self.total_profit = 0.0
         self.total_equity = 0
+        self.win_profit = 0
+        self.loss_profit = 0
         self.total_trade = 0
         self.win_trade = 0
         self.lose_trade = 0
+        self.pnl_ratio = 0
         self.max_equity = 0
         self.dd = 0
         self.mdd = 0
         self.weekIndicator = WeekIndicator(week_start, hour_start, long_rate, short_rate)
 
-    # TODO
     # 1. 손절하도록. 손절하면 1일후에 집입토록.
     # 2. MDD 측정. 손익비 측정.
     # 3. long rate, short rate 다르게 테스트..
@@ -163,7 +163,7 @@ class AlertGo(Algo):
                     self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
 
     def show_summary(self):
-        log.position.info(f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% PL%:0')
+        log.position.info(f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% P/L:{self.pnl_ratio:0.1f}')
 
     def close_position(self, time, exit_price, entry_price, amount):
         # 이익 확인.
@@ -178,8 +178,15 @@ class AlertGo(Algo):
         self.total_trade += 1
         if profit > 0:
             self.win_trade += 1
+            self.win_profit += profit
         else:
             self.lose_trade += 1
+            self.loss_profit += -profit
+        if self.lose_trade > 0 and self.win_trade > 0:
+            self.pnl_ratio = (self.win_profit / self.win_trade) / (self.loss_profit / self.lose_trade)
+        else:
+            self.pnl_ratio = 0
+
         # 초기화
         self.long_amount = 0
         self.short_amount = 0
@@ -211,8 +218,8 @@ if __name__ == '__main__':
     # 2018 SUMMARY TOT_PROFIT: 9768 DD: 0.0% MDD: 33.9% TOT_TRADE: 20 WIN%: 55.0%
     # 2019 SUMMARY TOT_PROFIT: 11654 DD: 2.7% MDD: 7.1% TOT_TRADE: 19 WIN%: 57.9%
     # 손절컷 도입.
-    # 2018  SUMMARY TOT_EQUITY:19605 TOT_PROFIT:9605 DD:3.2% MDD:10.6% TOT_TRADE:30 WIN%:36.7% PL%:0
-    # 2019 SUMMARY TOT_EQUITY:21251 TOT_PROFIT:11251 DD:3.2% MDD:4.0% TOT_TRADE:27 WIN%:29.6% PL%:0
+    # 2018 SUMMARY TOT_EQUITY:19605 TOT_PROFIT:9605 DD:3.2% MDD:10.6% TOT_TRADE:30 WIN%:36.7% P/L:5.4
+    # 2019 SUMMARY TOT_EQUITY:21251 TOT_PROFIT:11251 DD:3.2% MDD:4.0% TOT_TRADE:27 WIN%:29.6% P/L:12.6
 
     # hour=4
     # 2019 SUMMARY TOT_PROFIT: 11583 TOT_TRADE: 19 WIN%: 57.9%
@@ -254,7 +261,7 @@ if __name__ == '__main__':
     # hour=17
     # 2019 SUMMARY TOT_PROFIT: 4617 TOT_TRADE: 22 WIN%: 40.9%
 
-    year = 2018
+    year = 2019
     bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
               candle_period='1h',
               backtest=True, test_start=f'{year}-01-01', test_end=f'{year}-12-31',
