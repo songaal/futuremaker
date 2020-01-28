@@ -13,29 +13,29 @@ from os.path import getmtime
 from futuremaker import config
 from futuremaker.log import logger
 
-import ccxt
-import ccxt.async_support as ccxt_async
+# import ccxt
+# import ccxt.async_support as ccxt_async
 
-def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, testnet=False, opt={}):
-
-    if api_key is not None and api_secret is not None:
-        opt.update({
-            'apiKey': api_key,
-            'secret': api_secret,
-        })
-    logger.info('exchange_id >>> %s', exchange)
-    if is_async:
-        api = getattr(ccxt_async, exchange)(opt)
-    else:
-        api = getattr(ccxt, exchange)(opt)
-
-    # Bitmex 용도..
-    if testnet:
-        api.urls['api'] = api.urls['test']
-
-    api.substituteCommonCurrencyCodes = False
-
-    return api
+# def ccxt_exchange(exchange, api_key=None, api_secret=None, is_async=True, testnet=False, opt={}):
+#
+#     if api_key is not None and api_secret is not None:
+#         opt.update({
+#             'apiKey': api_key,
+#             'secret': api_secret,
+#         })
+#     logger.info('exchange_id >>> %s', exchange)
+#     if is_async:
+#         api = getattr(ccxt_async, exchange)(opt)
+#     else:
+#         api = getattr(ccxt, exchange)(opt)
+#
+#     # Bitmex 용도..
+#     if testnet:
+#         api.urls['api'] = api.urls['test']
+#
+#     api.substituteCommonCurrencyCodes = False
+#
+#     return api
 
 
 def print_traceback():
