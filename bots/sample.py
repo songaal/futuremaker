@@ -27,8 +27,9 @@ class AlertGo(Algo):
     """
     # TODO 봇이 재시작하면 상태 변수들이 사라지는데 어떻게 저장해놓을 것인가... long_amount, long_losscut_price, pnl_ratio ... 또한 시작일자에 따라서
       통계수치는 다를수 있다..
+      히스토리를 위해서는 디비가 필수일듯하다.sqlite를 쓰자.
     """
-    def __init__(self, week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4):
+    def __init__(self, week_start=Yoil.MON, hour_start=0, long_rate=0.5, short_rate=0.5):
         self.pyramiding = 1
         self.init_capital = 10000
         self.default_amount = self.init_capital * 0.8
@@ -85,13 +86,13 @@ class AlertGo(Algo):
 
         # 3. 롱 포지션 손절.
         if self.long_amount > 0:
-            if candle.close < self.long_losscut_price:
+            if candle.close < min(candle.long_break, self.long_losscut_price) < candle.open:  # 롱 라인을 뚫고 내려올때. min을 사용하여 좀더 여유확보.
                 if (time - self.position_entry_time).days >= 1:
                     self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
 
         # 4. 숏 포지션 손절.
         if self.short_amount > 0:
-            if candle.close > self.short_losscut_price:
+            if candle.close > min(candle.short_break, self.short_losscut_price) > candle.open:  # 숏 라인을 뚫고 올라올때. min을 사용하여 빠른 손절.
                 if (time - self.position_entry_time).days >= 1:
                     self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
 
@@ -161,64 +162,16 @@ if __name__ == '__main__':
     alert = None
     api = ExchangeAPI()
 
-    #### MON
-    # hour_start=0
-    # 2018 SUMMARY TOT_PROFIT: 9768 DD: 0.0% MDD: 33.9% TOT_TRADE: 20 WIN%: 55.0%
-    # 2019 SUMMARY TOT_PROFIT: 11654 DD: 2.7% MDD: 7.1% TOT_TRADE: 19 WIN%: 57.9%
-    # 손절컷 도입.
-    # 2018 SUMMARY TOT_EQUITY:19605 TOT_PROFIT:9605 DD:3.2% MDD:10.6% TOT_TRADE:30 WIN%:36.7% P/L:5.4
-    # 2019 SUMMARY TOT_EQUITY:21251 TOT_PROFIT:11251 DD:3.2% MDD:4.0% TOT_TRADE:27 WIN%:29.6% P/L:12.6
-    # 자본의 80%투입
-    # 2019 SUMMARY TOT_EQUITY:24012 TOT_PROFIT:14012 DD:6.9% MDD:7.8% TOT_TRADE:27 WIN%:29.6% P/L:8.1
-    # 자본의 100%투입
-    # 2018 SUMMARY TOT_EQUITY:27102 TOT_PROFIT:17102 DD:8.1% MDD:13.6% TOT_TRADE:30 WIN%:36.7% P/L:4.7
-    # 2019 SUMMARY TOT_EQUITY:28362 TOT_PROFIT:18362 DD:8.5% MDD:9.7% TOT_TRADE:27 WIN%:29.6% P/L:7.5
-
-    # hour=4
-    # 2019 SUMMARY TOT_PROFIT: 11583 TOT_TRADE: 19 WIN%: 57.9%
-
-    # hour=9
-    # 2018 SUMMARY TOT_PROFIT: 9265 TOT_TRADE: 20 WIN%: 50.0%
-    # 2019 SUMMARY TOT_PROFIT: 7967 TOT_TRADE: 19 WIN%: 52.6%
-
-    # hour=12
-    # 2018 SUMMARY TOT_PROFIT: 5445 TOT_TRADE: 24 WIN%: 45.8%
-    # 2019 SUMMARY TOT_PROFIT: 12126 TOT_TRADE: 18 WIN%: 55.6%
-
-    # hour=17
-    # 2018 SUMMARY TOT_PROFIT: 7168 TOT_TRADE: 20 WIN%: 55.0%
-    # 2019 SUMMARY TOT_PROFIT: 12632 TOT_TRADE: 16 WIN%: 62.5%
-
-    # hour=23
-    # 2018 SUMMARY TOT_PROFIT: 5630 TOT_TRADE: 22 WIN%: 54.5%
-    # 2019 SUMMARY TOT_PROFIT: 11041 TOT_TRADE: 20 WIN%: 55.0%
-
-    #### WED
-    # hour=0
-    # 2018 SUMMARY TOT_PROFIT: 5901 TOT_TRADE: 21 WIN%: 47.6%
-    # 2019 SUMMARY TOT_PROFIT: 9571 TOT_TRADE: 20 WIN%: 45.0%
-
-    # hour=9
-    # 2019 SUMMARY TOT_PROFIT: 5579 TOT_TRADE: 26 WIN%: 38.5%
-
-    #### FRI
-    #hour=0
-    # 2019 SUMMARY TOT_PROFIT: 10600 TOT_TRADE: 16 WIN%: 56.2%
-    # hour=9
-    # 2019 SUMMARY TOT_PROFIT: 4777 TOT_TRADE: 24 WIN%: 41.7%
-
-    #### SUN
-    # hour=0
-    # 2019 SUMMARY TOT_PROFIT: 5573 TOT_TRADE: 20 WIN%: 45.0%
-
-    # hour=17
-    # 2019 SUMMARY TOT_PROFIT: 4617 TOT_TRADE: 22 WIN%: 40.9%
-
-    year = 2019
+    # 2018 TOT_EQUITY:44682 TOT_PROFIT:34682 DD:0.0% MDD:16.7% TOT_TRADE:29 WIN%:48.3% P/L:4.9
+    # 2019 TOT_EQUITY:29607 TOT_PROFIT:19607 DD:8.7% MDD:15.4% TOT_TRADE:26 WIN%:38.5% P/L:5.3
+    year = 2017
     bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
               candle_period='1h',
               backtest=True, test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-              test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
+              # test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
+              test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
+              # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv'
+              # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv'
               )
 
     algo = AlertGo(week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)

@@ -9,14 +9,13 @@ import os
 
 class Nexus(object):
 
-    def __init__(self, api, symbol, candle_limit, candle_period, test_start=None, test_end=None, test_data=None):
+    def __init__(self, api, symbol, candle_limit, test_start=None, test_end=None, test_data=None):
         self.api = api
         self.candle_handler = None
         self.symbol = symbol
 
         self.cb_update_candle = None
         self.candle_limit = candle_limit
-        self.candle_period = candle_period
         self.test_start = datetime.strptime(test_start, '%Y-%m-%d') if test_start else None
         self.test_end = datetime.strptime(test_end, '%Y-%m-%d') if test_end else None
         self.test_data = test_data
@@ -84,7 +83,7 @@ class CandleHandler(object):
     def load(self):
         print(f'Load data: {os.path.abspath(self.filepath)}')
         self._data = pd.read_csv(self.filepath, index_col='time',
-                                 usecols=['time', 'open', 'high', 'low', 'close', 'volume'],
+                                 usecols=['time', 'open', 'high', 'low', 'close', 'Volume'],
                                  parse_dates=['time'],
                                  date_parser=lambda epoch: pd.to_datetime(epoch, unit='s')
                                  )

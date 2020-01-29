@@ -43,7 +43,7 @@ class Bot(object):
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
             # self.telegram = TelegramAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
         else:
-            self.nexus = nexus_mock.Nexus(api, symbol, candle_limit, candle_period, test_start, test_end, test_data)
+            self.nexus = nexus_mock.Nexus(api, symbol, candle_limit, test_start, test_end, test_data)
 
     def send_telegram(self, text):
         if self.telegram_bot_token and self.telegram_chat_id:
