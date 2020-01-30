@@ -21,7 +21,7 @@ class Bot(object):
     nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
     """
 
-    def __init__(self, api, symbol, candle_limit=20, candle_period='1h',
+    def __init__(self, api, symbol, candle_limit=20, candle_period='1h', since=None, dry_run=True,
                  backtest=True, test_start=None, test_end=None, test_data=None,
                  telegram_bot_token=None, telegram_chat_id=None):
 
@@ -39,7 +39,7 @@ class Bot(object):
         self.telegram_chat_id = telegram_chat_id
 
         if not self.backtest:
-            self.nexus = Nexus(api, symbol, dry_run=True, candle_limit=candle_limit, candle_period=candle_period)
+            self.nexus = Nexus(api, symbol, candle_limit=candle_limit, candle_period=candle_period, dry_run=dry_run)
         else:
             self.nexus = nexus_mock.Nexus(candle_limit, test_start, test_end, test_data)
 

@@ -185,7 +185,7 @@ if __name__ == '__main__':
                    # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv'
                    )
     real_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
-                   backtest=False,
+                   backtest=False, dry_run=False,
                    candle_period='1h',
                    telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
                    telegram_chat_id='352354994'

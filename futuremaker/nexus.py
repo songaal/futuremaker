@@ -15,7 +15,7 @@ class Nexus(object):
     nexus.api.put_order() 와 같이 사용.
     """
 
-    def __init__(self, api, symbol, dry_run=True, candle_limit=None, candle_period=None):
+    def __init__(self, api, symbol, candle_limit, candle_period=None, dry_run=True):
         """
         :param symbol: 심볼페어. XBTUSD, BTC/USD
         :param dry_run: 참일 경우 실제 주문 api를 호출하지 않는다.
@@ -39,9 +39,10 @@ class Nexus(object):
                 period_in_second = 3600
             elif candle_period == '1d':
                 period_in_second = 3600 * 24
-            since = datetime.datetime.now().timestamp() - period_in_second * candle_limit
-            since = since * 1000
-            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, history=candle_limit, since=since)
+            ts = datetime.datetime.now().timestamp() - period_in_second * candle_limit
+            since = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+            # 현재시각에서 since를 뺀 날짜를 string으로 만든다.
+            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, since=since)
 
     def callback(self, update_orderbook=None, update_candle=None, update_order=None, update_position=None):
         """

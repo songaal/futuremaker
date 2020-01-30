@@ -10,12 +10,12 @@ from futuremaker.log import logger
 
 class CandleHandler(object):
 
-    def __init__(self, api, symbol, period, history, since=None):
+    def __init__(self, api, symbol, period, since=None):
         self.api = api
         self.symbol = symbol
         self.period = period
-        self.history = history
-        self.since = since
+        self.since = since # 첨엔 이전 데이터가 몇개 필요하므로 since를 계산해서 받는다.
+        self.history = 100 # 캔들은 100 개 유지한다.
         self.datetime_format = '%Y-%m-%dT%H:%M:%S.%fZ'
         self.candle = None
 
@@ -27,7 +27,7 @@ class CandleHandler(object):
 
         # 최신것부터 limit 개를 가져온다.
         # new_data = await
-        new_data = self.api.fetch_ohlcv(symbol= self.symbol, timeframe=self.period, since=self.since, limit=self.history)
+        new_data = self.api.fetch_ohlcv(symbol= self.symbol, timeframe=self.period, since=self.since)
         # 오래된순 정렬로 바꿈.
         # new_data = new_data[::-1]
         index_list = []
