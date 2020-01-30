@@ -1,8 +1,12 @@
 import logging
 
+
 class Algo(object):
     def __init__(self):
         self.api = None
+
+    def get_name(self):
+        return type(self).__name__
 
     def update_candle(self, df, candle):
         """

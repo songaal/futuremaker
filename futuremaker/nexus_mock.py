@@ -26,7 +26,7 @@ class Nexus(object):
         """
         self.cb_update_candle = update_candle
 
-    def _update_candle(self):
+    async def _update_candle(self):
         candle_df = self.candle_handler.update()
 
         # 캔들업뎃호출
@@ -39,7 +39,7 @@ class Nexus(object):
                 # skip
                 return 0
 
-            self.cb_update_candle(candle_df, candle_df.iloc[-1])
+            await self.cb_update_candle(candle_df, candle_df.iloc[-1])
             return candle_df
 
     async def start(self):
@@ -49,7 +49,7 @@ class Nexus(object):
 
         logger.info('Backtest start timer!')
         while True:
-            df = self._update_candle()
+            df = await self._update_candle()
             if df is None:
                 break
 

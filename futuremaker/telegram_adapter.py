@@ -158,5 +158,5 @@ class TelegramAdapter(object):
                                     except KeyError:
                                         logger.error("key error", KeyError)
                     # 한번씩 쉬면서 대화 내용 조회하기.
-                    time.sleep(1)
+                    asyncio.sleep(10)
         return get_update()

@@ -1,4 +1,5 @@
 import asyncio
+import concurrent
 import os
 import time
 from datetime import datetime
@@ -22,7 +23,8 @@ class Bot(object):
 
     def __init__(self, api, symbol, candle_limit=20, candle_period='1m',
                  testnet=True, dry_run=False, http_port=None,
-                 backtest=False, test_start=None, test_end=None, test_data=None):
+                 backtest=False, test_start=None, test_end=None, test_data=None,
+                 telegram_bot_token=None, telegram_chat_id=None):
 
         if not symbol:
             raise Exception('Symbol must be set.')
@@ -35,20 +37,21 @@ class Bot(object):
         self.candle_period = candle_period
         self.http_port = http_port
         self.backtest = backtest
-        self.telegram_bot_token = None
-        self.telegram_chat_id = None
+        self.telegram_bot_token = telegram_bot_token
+        self.telegram_chat_id = telegram_chat_id
 
         if not self.backtest:
             self.nexus = Nexus(api, symbol, testnet=testnet,
                                dry_run=dry_run, candle_limit=candle_limit, candle_period=candle_period)
-            # self.telegram = TelegramAdapter(bot_token=telegram_bot_token, chat_id=telegram_chat_id, expire_time=600)
         else:
             self.nexus = nexus_mock.Nexus(api, symbol, candle_limit, test_start, test_end, test_data)
 
-    def send_telegram(self, text):
-        if self.telegram_bot_token and self.telegram_chat_id:
-            coro = utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-            asyncio.get_event_loop().create_task(coro)
+    async def send_telegram(self, text):
+        if not self.backtest:
+            if self.telegram_bot_token and self.telegram_chat_id:
+                return await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+            else:
+                print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
 
     async def init(self):
         """
@@ -67,14 +70,8 @@ class Bot(object):
         :return:
         """
         pass
-        # while True:
-        #     try:
-        #         text = await self.mqueue.get()
-        #         await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-        #     except Exception as e:
-        #         logger.error('_consume error >> %s', e)
 
-    def run(self, algo):
+    async def run(self, algo):
         self.nexus.callback(update_orderbook=algo.update_orderbook,
                             update_candle=algo.update_candle,
                             update_order=algo.update_order,
@@ -95,37 +92,17 @@ class Bot(object):
             logger.info('TZNAME: %s', time.tzname)
             ip_address = requests.get('https://api.ipify.org?format=json').json()['ip']
             logger.info('IP: %s', ip_address)
+            await self.send_telegram(f'{algo.get_name()} Bot started.. {ip_address}')
             logger.info('Loading...')
-            self.send_telegram('Futuremaker Bot started.. {}'.format(ip_address))
-            loop.run_until_complete(self.nexus.load())
-            nexus_start = loop.create_task(self.nexus.start())
-            loop.run_until_complete(self.init())
-            scheduled_task = loop.create_task(self.schedule())
-            if self.http_port and not self.backtest:
-                server_task = loop.create_task(self._run_server())
+            await self.nexus.load()
+            await self.init()
 
-            async def go():
-                await nexus_start
-            loop.run_until_complete(go())
+            scheduled_task = loop.create_task(self.schedule())
+            nexus_start = loop.create_task(self.nexus.start())
+            await asyncio.gather(scheduled_task, nexus_start)
         except KeyboardInterrupt:
             pass
         finally:
             loop.stop()
 
-    async def _run_server(self):
-        try:
-            app = web.Application()
-            app.add_routes([
-                web.get('/', self._handle_info),
-            ])
-            runner = web.AppRunner(app)
-            await runner.setup()
-            site = web.TCPSite(runner, '0.0.0.0', self.http_port)
-            await site.start()
-            logger.info('HTTP server bind port %s', self.http_port)
-        except Exception as e:
-            logger.error('_run_server error %s', e)
-
-    async def _handle_info(self, request):
-        return web.Response(body='{}'.format(self.__class__.__name__))
 
