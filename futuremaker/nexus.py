@@ -15,30 +15,19 @@ class Nexus(object):
     nexus.api.put_order() 와 같이 사용.
     """
 
-    def __init__(self, api, ws, symbol, leverage=None, api_key=None, api_secret=None, testnet=True, dry_run=False,
-                 candle_limit=None, candle_period=None):
+    def __init__(self, api, symbol, dry_run=True, candle_limit=None, candle_period=None):
         """
         :param symbol: 심볼페어. XBTUSD, BTC/USD
         :param dry_run: 참일 경우 실제 주문 api를 호출하지 않는다.
         :param candle_limit: 저장할 최대 캔들갯수.
         :param candle_period: 봉주기. Bitmex는 4가지만 지원한다. 1m, 5m, 1h, 1d
         """
-        exchange = 'bitmex'
         self.candle_handler = None
         self.api = api
-        self.ws = ws
         self.cb_update_candle = None
-        # raw_symbol = symbol.replace('/', '')
-        # self.api = utils.ccxt_exchange(exchange, api_key=api_key, api_secret=api_secret, is_async=False, testnet=testnet)
-        # if api_key and api_secret and self.api and leverage is not None:
-        #     self.api.private_post_position_leverage({'symbol': symbol, 'leverage': leverage})
+        self.dry_run = dry_run
 
-        logger.info('>>candle_period>> %s',candle_period)
-            # 웹소켓 처리기.
-        # self.ws = BitmexWS(symbol, candle_period,
-        #                    api_key=api_key,
-        #                    api_secret=api_secret,
-        #                    testnet=testnet)
+        logger.info(f'Nexus symbol[{symbol}] period[{candle_period}] dry_run[{dry_run}]')
 
         if candle_limit and candle_period:
             period_in_second = 0
@@ -64,10 +53,10 @@ class Nexus(object):
         :return:
         """
         self.cb_update_candle = update_candle
-        self.ws.update_orderbook = update_orderbook
-        self.ws.update_candle = self._update_candle
-        self.ws.update_order = update_order
-        self.ws.update_position = update_position
+        # self.ws.update_orderbook = update_orderbook
+        # self.ws.update_candle = self._update_candle
+        # self.ws.update_order = update_order
+        # self.ws.update_position = update_position
 
     def _update_candle(self, item):
         candle_df = self.candle_handler.update(item)
@@ -79,7 +68,7 @@ class Nexus(object):
         try:
 
             # await
-            self.api.load_markets()
+            # self.api.load_markets()
 
             if self.candle_handler:
                 # await
@@ -87,16 +76,18 @@ class Nexus(object):
             else:
                 logger.info('candle_handler 를 사용하지 않습니다.')
 
-            await self.ws.connect()
+            # await self.ws.connect()
         except:
             utils.print_traceback()
 
     async def start(self):
-        await self.ws.listen()
+        # await self.ws.listen()
+        pass
 
     async def wait_ready(self):
-        await self.ws.wait_ready()
+        # await self.ws.wait_ready()
+        pass
 
-    def __getitem__(self, item):
-        if item in self.ws.data:
-            return self.ws.data[item]
+    # def __getitem__(self, item):
+    #     if item in self.ws.data:
+    #         return self.ws.data[item]

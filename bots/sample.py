@@ -4,6 +4,7 @@ from datetime import datetime
 
 from bots.week_breakout_indicator import WeekIndicator
 from futuremaker import utils
+from futuremaker.binance_api import BinanceAPI
 from futuremaker.bot import Bot
 from futuremaker.algo import Algo
 from futuremaker import log
@@ -30,6 +31,7 @@ class AlertGo(Algo):
       통계수치는 다를수 있다..
       히스토리를 위해서는 디비가 필수일듯하다.sqlite를 쓰자.
     """
+
     def __init__(self, week_start=Yoil.MON, hour_start=0, long_rate=0.5, short_rate=0.5):
         self.pyramiding = 1
         self.init_capital = 10000
@@ -87,13 +89,15 @@ class AlertGo(Algo):
 
         # 3. 롱 포지션 손절.
         if self.long_amount > 0:
-            if candle.close < min(candle.long_break, self.long_losscut_price) < candle.open:  # 롱 라인을 뚫고 내려올때. min을 사용하여 좀더 여유확보.
+            if candle.close < min(candle.long_break,
+                                  self.long_losscut_price) < candle.open:  # 롱 라인을 뚫고 내려올때. min을 사용하여 좀더 여유확보.
                 if (time - self.position_entry_time).days >= 1:
                     await self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
 
         # 4. 숏 포지션 손절.
         if self.short_amount > 0:
-            if candle.close > min(candle.short_break, self.short_losscut_price) > candle.open:  # 숏 라인을 뚫고 올라올때. min을 사용하여 빠른 손절.
+            if candle.close > min(candle.short_break,
+                                  self.short_losscut_price) > candle.open:  # 숏 라인을 뚫고 올라올때. min을 사용하여 빠른 손절.
                 if (time - self.position_entry_time).days >= 1:
                     await self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
 
@@ -127,7 +131,8 @@ class AlertGo(Algo):
         self.total_profit += profit
         self.total_equity = self.init_capital + self.total_profit
         self.max_equity = max(self.max_equity, self.total_equity)
-        self.dd = (self.max_equity - self.total_equity) * 100 / self.max_equity if self.max_equity > 0 and self.max_equity - self.total_equity > 0 else 0
+        self.dd = (
+                          self.max_equity - self.total_equity) * 100 / self.max_equity if self.max_equity > 0 and self.max_equity - self.total_equity > 0 else 0
         self.mdd = max(self.mdd, self.dd)
         # trade 횟수.
         self.total_trade += 1
@@ -166,22 +171,27 @@ if __name__ == '__main__':
     # api 는 오더도 가능하지만 캔들정보도 확인가능. 1분마다 확인.
     api = None
     alert = None
-    api = ExchangeAPI()
+    api = BinanceAPI()
 
     # 2018 TOT_EQUITY:44682 TOT_PROFIT:34682 DD:0.0% MDD:16.7% TOT_TRADE:29 WIN%:48.3% P/L:4.9
     # 2019 TOT_EQUITY:29607 TOT_PROFIT:19607 DD:8.7% MDD:15.4% TOT_TRADE:26 WIN%:38.5% P/L:5.3
     year = 2019
-    bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
-              candle_period='1h',
-              backtest=True, test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-              test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
-              # test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
-              # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv'
-              # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv'
-              ,
-              telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
-              telegram_chat_id='352354994'
-              )
+    test_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
+                   candle_period='1h',
+                   test_start=f'{year}-01-01', test_end=f'{year}-12-31',
+                   test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
+                   # test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
+                   # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv'
+                   # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv'
+                   )
+    real_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
+                   backtest=False,
+                   candle_period='1h',
+                   telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
+                   telegram_chat_id='352354994'
+                   )
 
     algo = AlertGo(week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)
-    asyncio.run(bot.run(algo))
+
+    # asyncio.run(test_bot.run(algo))
+    asyncio.run(real_bot.run(algo))

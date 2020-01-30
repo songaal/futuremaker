@@ -9,11 +9,8 @@ import os
 
 class Nexus(object):
 
-    def __init__(self, api, symbol, candle_limit, test_start=None, test_end=None, test_data=None):
-        self.api = api
+    def __init__(self, candle_limit, test_start=None, test_end=None, test_data=None):
         self.candle_handler = None
-        self.symbol = symbol
-
         self.cb_update_candle = None
         self.candle_limit = candle_limit
         self.test_start = datetime.strptime(test_start, '%Y-%m-%d') if test_start else None
@@ -55,7 +52,7 @@ class Nexus(object):
 
     async def load(self):
         try:
-            self.candle_handler = CandleHandler(self.test_data, self.candle_limit)
+            self.candle_handler = FileCandleHandler(self.test_data, self.candle_limit)
             self.candle_handler.load()
         except:
             utils.print_traceback()
@@ -67,7 +64,7 @@ class Nexus(object):
         return None
 
 
-class CandleHandler(object):
+class FileCandleHandler(object):
 
     def __init__(self, filepath, history):
         self.filepath = filepath
