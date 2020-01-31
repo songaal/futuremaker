@@ -1,4 +1,5 @@
 import datetime
+import asyncio
 
 from futuremaker import utils
 from futuremaker.bitmex.bitmex_ws import BitmexWS
@@ -42,7 +43,7 @@ class Nexus(object):
             ts = datetime.datetime.now().timestamp() - period_in_second * candle_limit
             since = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
             # 현재시각에서 since를 뺀 날짜를 string으로 만든다.
-            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, since=since)
+            self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, since=since, _update_notify=self._update_candle)
 
     def callback(self, update_orderbook=None, update_candle=None, update_order=None, update_position=None):
         """
@@ -59,36 +60,30 @@ class Nexus(object):
         # self.ws.update_order = update_order
         # self.ws.update_position = update_position
 
-    def _update_candle(self, item):
-        candle_df = self.candle_handler.update(item)
+    # candle handler 에서 호출해준다.
+    def _update_candle(self, df):
         # 캔들업뎃호출
         if self.cb_update_candle:
-            self.cb_update_candle(candle_df, item)
+            self.cb_update_candle(df, df.iloc[-1])
 
     async def load(self):
         try:
-
-            # await
-            # self.api.load_markets()
-
             if self.candle_handler:
                 # await
                 self.candle_handler.load()
             else:
                 logger.info('candle_handler 를 사용하지 않습니다.')
-
-            # await self.ws.connect()
         except:
             utils.print_traceback()
 
     async def start(self):
-        # await self.ws.listen()
         pass
+        # await self.ws.listen()
+        # while True:
+        #     # self.candle_handler.update()
+        #     print(datetime.datetime.now())
+        #     await asyncio.sleep(2)
 
     async def wait_ready(self):
         # await self.ws.wait_ready()
         pass
-
-    # def __getitem__(self, item):
-    #     if item in self.ws.data:
-    #         return self.ws.data[item]

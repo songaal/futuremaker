@@ -80,7 +80,7 @@ class FileCandleHandler(object):
     def load(self):
         print(f'Load data: {os.path.abspath(self.filepath)}')
         self._data = pd.read_csv(self.filepath, index_col='time',
-                                 usecols=['time', 'open', 'high', 'low', 'close', 'Volume'],
+                                 usecols=['time', 'open', 'high', 'low', 'close', 'volume'],
                                  parse_dates=['time'],
                                  date_parser=lambda epoch: pd.to_datetime(epoch, unit='s')
                                  )

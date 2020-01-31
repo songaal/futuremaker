@@ -9,4 +9,4 @@ wheel
 jupyter
 mpl_finance
 python-binance
-sanic
+# sanic

@@ -110,7 +110,7 @@ def fetch_ohlcv(api, symbol, interval, since, limit, params=None):
     if api.has['fetchOHLCV']:
         if symbol in api.markets:
             # return await
-            return api.fetch_ohlcv(symbol, timeframe=interval, since=since, limit=limit, params=params)
+            return api.bulk_klines(symbol, timeframe=interval, since=since, limit=limit, params=params)
 
 
 def split_interval(time_interval):

@@ -22,7 +22,7 @@ class TestCcxt(unittest.TestCase):
 
         async def go(symbol, timeframe, limit):
             m = await api.load_markets()
-            new_data = await api.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+            new_data = await api.bulk_klines(symbol=symbol, timeframe=timeframe, limit=limit)
             print(new_data)
             await api.close()
         utils.test_async(go('XBT/USD', '1m', 10))

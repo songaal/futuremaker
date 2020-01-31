@@ -58,10 +58,17 @@ def get_account():
     print(api.account_info())
 
 
-def test_get_candle():
-    api.fetch_ohlcv(symbol, '1h', since='2019-12-01')
+def test_bulk_candle():
+    print(api.bulk_klines(symbol, '1h', since='2020-01-31'))
 
 
-test_get_candle()
+def test_get_klines():
+    print(api.get_klines(symbol, '1h', since='2019-01-01', limit=10))
 
+
+def test_ws_kline():
+    api.start_websocket(symbol, '1h', lambda s: print(s))
+
+
+test_ws_kline()
 
