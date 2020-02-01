@@ -1,3 +1,5 @@
+import os
+
 from binance.client import Client
 from binance.enums import *
 from binance.websockets import BinanceSocketManager
@@ -5,8 +7,10 @@ from binance.websockets import BinanceSocketManager
 
 class BinanceAPI:
 
-    def __init__(self, api_key=None, api_secret=None):
-        self.client = Client(api_key, api_secret)
+    def __init__(self):
+        key = os.getenv('key')
+        secret = os.getenv('secret')
+        self.client = Client(key, secret)
         self.ws = BinanceSocketManager(self.client)
         self.conn_key = None
 
@@ -32,7 +36,7 @@ class BinanceAPI:
         klines = self.client.get_historical_klines(symbol, interval, start_str=since, limit=limit)
         return klines
 
-    def account_info(self):
+    def margin_account_info(self):
         info = self.client.get_margin_account()
         return info
 
@@ -70,6 +74,18 @@ class BinanceAPI:
                 type=ORDER_TYPE_MARKET)
         return order
 
+    def get_my_trades(self, symbol):
+        return self.client.get_my_trades(symbol=symbol)
+
+    def get_price(self, symbol, type='lastPrice'):
+        """
+        :param symbol:
+        :param type: bidPrice, askPrice, lastPrice
+        :return:
+        """
+        ticker = self.client.get_ticker(symbol=symbol)
+        return float(ticker[type])
+
     def create_loan(self, asset, amount):
         transaction = self.client.create_margin_loan(asset=asset, amount=amount)
         return transaction
@@ -79,18 +95,15 @@ class BinanceAPI:
         return transaction
 
     def repay_all(self, asset):
-        info = self.account_info()
+        info = self.margin_account_info()
         obj = next(item for item in info['userAssets'] if item['asset'] == asset)
-        free = obj['free']
-        return self.repay_loan(asset, free)
+        total = float(obj['borrowed']) + float(obj['interest'])
+        available = min(total, float(obj['free']))
+        return self.repay_loan(asset, available)
 
     def asset_detail(self):
         details = self.client.get_asset_details()
         return details
-
-    def get_tickers(self, symbol):
-        tickers = self.client.get_all_tickers()
-        return next(item for item in tickers if item['symbol'] == symbol)
 
     def get_orderbook_tickers(self, symbol):
         """

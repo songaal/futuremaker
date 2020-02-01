@@ -32,7 +32,8 @@ class AlertGo(Algo):
       히스토리를 위해서는 디비가 필수일듯하다.sqlite를 쓰자.
     """
 
-    def __init__(self, week_start=Yoil.MON, hour_start=0, long_rate=0.5, short_rate=0.5):
+    def __init__(self, symbol, week_start=Yoil.MON, hour_start=0, long_rate=0.5, short_rate=0.5):
+        self.symbol = symbol
         self.pyramiding = 1
         self.init_capital = 10000
         self.default_amount = self.init_capital * 0.8
@@ -191,7 +192,7 @@ if __name__ == '__main__':
                    # telegram_chat_id='352354994'
                    )
 
-    algo = AlertGo(week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)
+    algo = AlertGo(symbol='BTCUSDT', week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)
 
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))

@@ -3,9 +3,7 @@ import os
 from futuremaker.binance_api import BinanceAPI
 
 symbol = 'BTCUSDT'
-key = os.getenv('key')
-secret = os.getenv('secret')
-api = BinanceAPI(key, secret)
+api = BinanceAPI()
 
 
 def loan_test():
@@ -19,7 +17,7 @@ def loan_test():
     print(ret)
 
 
-def loan_buy_and_close():
+def loan_and_buy():
     asset = 'USDT'
     amount = 40
     ret = api.create_loan(asset, amount)
@@ -40,22 +38,8 @@ def close_buy():
     print(ret)
 
 
-def get_tickers():
-    s = api.get_tickers(symbol)
-    print(s)
-    price = s['price']
-    print(f'price: {price}')
-
-
-def get_orderbook_tickers():
-    s = api.get_orderbook_tickers(symbol)
-    print(s)
-    # price = s['price']
-    # print(f'price: {price}')
-
-
-def get_account():
-    print(api.account_info())
+def margin_account_info():
+    print(api.margin_account_info())
 
 
 def test_bulk_candle():
@@ -70,5 +54,8 @@ def test_ws_kline():
     api.start_websocket(symbol, '1h', lambda s: print(s))
 
 
-test_ws_kline()
+def get_my_trade():
+    print(api.get_my_trades(symbol))
+
+get_my_trade()
 

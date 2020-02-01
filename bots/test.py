@@ -15,7 +15,16 @@ class Type:
 
 
 class AlertGo(Algo):
-    def __init__(self):
+    def __init__(self, base='BTC', quote='USDT', floor_decimals=3):
+        self.api: BinanceAPI = None
+        self.base = base
+        self.quote = quote
+        self.symbol = f'{base}{quote}'
+        self.base_quantity = 0
+        self.floor_decimals = floor_decimals
+        #  트레이딩 최대예산. 이 수치를 넘어서 사지 않는다. 단위는 quote기준.
+        self.max_budget = 50
+
         self.init_capital = 10000
         self.default_amount = self.init_capital * 0.8
         self.long_amount = 0
@@ -44,20 +53,94 @@ class AlertGo(Algo):
         print('strat: ', candle)
         time = candle.name
 
-        # 롤 진입
-        if self.short_amount > 0 and self.long_amount == 0:
+        # 첫진입.
+        if self.base_quantity == 0:
+            self.buy_long()
+            self.open_position(Type.LONG, time, candle.close, candle.long_break)
+
+        # 롱 진입
+        if self.base_quantity < 0:
+            self.close_short()
             self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
+            self.buy_long()
             self.open_position(Type.LONG, time, candle.close, candle.long_break)
 
         # 숏 진입
-        if self.short_amount == 0 and self.long_amount > 0:
+        if self.base_quantity > 0:
+            self.close_long()
             self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
+            self.sell_short()
             self.open_position(Type.SHORT, time, candle.close, candle.short_break)
 
     def show_summary(self):
         summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% P/L:{self.pnl_ratio:0.1f}'
         log.position.info(summary)
         self.send_telegram(summary)
+
+    def close_long(self):
+        if self.base_quantity > 0:
+            ret = self.api.create_sell_order(self.symbol, self.base_quantity)
+            log.order.info(f'CLOSE LONG > {ret}')
+            ret = self.api.repay_all(self.base)
+            log.order.info(f'REPAY ALL > {ret}')
+            self.base_quantity = 0
+
+    def close_short(self):
+        if self.base_quantity < 0:
+            ret = self.api.create_buy_order(self.symbol, -self.base_quantity)
+            log.order.info(f'CLOSE LONG > {ret}')
+            ret = self.api.repay_all(self.quote)
+            log.order.info(f'REPAY ALL > {ret}')
+            self.base_quantity = 0
+
+    def buy_long(self):
+        # 1. 빌린다.
+        # 얼마나 빌릴지 계산.
+        price = self.api.get_price(self.symbol)
+        info = self.api.margin_account_info()
+        total_value = utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 1)
+        max_budget = utils.floor_int(self.max_budget, 1)  # BTC 가격에 과적합된 코드
+        amount = min(max_budget, total_value)
+        ret = self.api.create_loan(self.quote, amount)
+        log.order.info(f'LOAN > {ret}')
+        # 2. 산다.
+        quantity = utils.floor(amount / price, self.floor_decimals)
+        # TODO 1btc를 초과할경우 여러번 나누어 사는 것 고려..
+        ret = self.api.create_buy_order(self.symbol, quantity)
+        # 구매한 만큼 base_quantity 를 셋팅한다.
+        self.base_quantity = quantity
+        log.order.info(f'LONG > {ret}')
+        self.wallet_summary()
+
+    def sell_short(self):
+        # 1. base 자산을 빌린다.
+        price = self.api.get_price(self.symbol)
+        info = self.api.margin_account_info()
+        total_value = utils.floor(float(info["totalNetAssetOfBtc"]), self.floor_decimals)
+        max_budget = utils.floor(self.max_budget / price, self.floor_decimals)  # BTC 가격에 과적합된 코드
+        amount = min(max_budget, total_value)
+        ret = self.api.create_loan(self.base, amount)
+        log.order.info(f'LOAN > {ret}')
+        # 2. 판다.
+        # TODO 1btc를 초과할경우 여러번 나누어 파는 것 고려..
+        ret = self.api.create_sell_order(self.symbol, amount)
+        self.base_quantity = -amount
+        log.order.info(f'SHORT > {ret}')
+        self.wallet_summary()
+
+    def wallet_summary(self):
+        price = self.api.get_price('BTCUSDT')
+        info = self.api.margin_account_info()
+        desc = '-----------------------'
+        desc = f'{desc}\n{datetime.now()}'
+        desc = f'{desc}\n자산가치[$ {utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 0)} = ' \
+               f'{utils.floor(float(info["totalNetAssetOfBtc"]), 3)} BTC]' \
+               f'\n마진레벨[{utils.floor(float(info["marginLevel"]), 2)}]\n'
+
+        for item in info['userAssets']:
+            if float(item['netAsset']) != 0.0:
+                desc = f"{desc}{item['asset']}: 순자산[{item['netAsset']}] 가능[{item['free'] if item['free'] != item['netAsset'] else '동일'}] 차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}]\n"
+        print(desc)
 
     def open_position(self, type, time, price, losscut_price):
         amount = int(self.total_equity * 1.0)
@@ -122,7 +205,6 @@ if __name__ == '__main__':
 
     # api 에 key와 secret 을 모두 셋팅.
     # api 는 오더도 가능하지만 캔들정보도 확인가능. 1분마다 확인.
-    api = None
     alert = None
     api = BinanceAPI()
 
@@ -142,7 +224,8 @@ if __name__ == '__main__':
                    # telegram_chat_id='352354994'
                    )
 
-    algo = AlertGo()
-
+    algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)
+    # algo.api = api
+    # algo.wallet_summary()
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))

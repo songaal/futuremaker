@@ -26,7 +26,7 @@ def setup_logger(name, log_file, level=logging.INFO, formatter=formatter):
 
 order_filepath = os.path.join(os.getcwd(), 'order.log')
 logger.info('Order log path: %s', order_filepath)
-order_logger = setup_logger('order_logger', order_filepath, logging.INFO, summary_formatter)
+order = setup_logger('order_logger', order_filepath, logging.INFO, summary_formatter)
 
 position_filepath = os.path.join(os.getcwd(), 'position.log')
 logger.info('Position log path: %s', position_filepath)

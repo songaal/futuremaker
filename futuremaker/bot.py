@@ -56,7 +56,7 @@ class Bot(object):
                             update_order=algo.update_order,
                             update_position=algo.update_position)
         # ccxt api 연결.
-        # algo.api = self.nexus.api
+        algo.api = self.api
         # algo.data = self.nexus.api.data
         algo.send_telegram = self.send_telegram
 

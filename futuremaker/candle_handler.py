@@ -32,11 +32,11 @@ class CandleHandler(object):
             index = pd.to_datetime(row[0], unit='ms')
             index_list.append(index)
             data_list.append({
-                'open': row[1],
-                'high': row[2],
-                'low': row[3],
-                'close': row[4],
-                'volume': row[5],
+                'open': float(row[1]),
+                'high': float(row[2]),
+                'low': float(row[3]),
+                'close': float(row[4]),
+                'volume': float(row[5]),
             })
 
         freq = utils.period_to_freq(self.period)
@@ -80,11 +80,11 @@ class CandleHandler(object):
             # last candle로 업데이트하고 notify를 호출하여 전략이 실행되게끔 한다.
             unit_time = self.last_candle['t']
             index = pd.to_datetime(unit_time, unit='ms')
-            open = self.last_candle['o']
-            high = self.last_candle['h']
-            low = self.last_candle['l']
-            close = self.last_candle['c']
-            volume = self.last_candle['v']
+            open = float(self.last_candle['o'])
+            high = float(self.last_candle['h'])
+            low = float(self.last_candle['l'])
+            close = float(self.last_candle['c'])
+            volume = float(self.last_candle['v'])
             self.candle.update(index, open, high, low, close, volume)
             self.update_notify(self.candle.df)
 
