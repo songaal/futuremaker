@@ -1,8 +1,11 @@
 import asyncio
 import signal
 import sys
+import time
 import traceback
 from datetime import datetime
+
+import math
 
 from futuremaker import utils
 from futuremaker.binance_api import BinanceAPI
@@ -42,6 +45,10 @@ class AlertGo(Algo):
         self.dd = 0
         self.mdd = 0
 
+        self.loanDelay = 3
+        self.buyDelay = 60
+        self.buyBTCUnit = 1
+
     # 1. 손절하도록. 손절하면 1일후에 집입토록.
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
@@ -51,20 +58,20 @@ class AlertGo(Algo):
 
             # 첫진입.
             if self.position_quantity == 0:
-                self.open_long()
-                self.calc_open(Type.LONG, time, candle.close, 0)
+                self.open_short()
+                self.calc_open(Type.SHORT, time, candle.close, 0)
             else:
                 # 롱 진입
                 if self.position_quantity < 0:
-                    self.calc_close(time, candle.close, self.position_entry_price)
-                    self.close_short()
+                    quantity = self.close_short()
+                    self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_long()
                     self.calc_open(Type.LONG, time, candle.close, 0)
 
                 # 숏 진입
                 elif self.position_quantity > 0:
-                    self.calc_close(time, candle.close, self.position_entry_price)
-                    self.close_long()
+                    quantity = self.close_long()
+                    self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_short()
                     self.calc_open(Type.SHORT, time, candle.close, 0)
         except Exception as e:
@@ -87,6 +94,7 @@ class AlertGo(Algo):
 
     def close_long(self):
         if self.position_quantity > 0:
+            quantity = self.position_quantity
             ret = self.api.create_sell_order(self.symbol, self.position_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
             amount = self.api.repay_all(self.quote)
@@ -94,18 +102,27 @@ class AlertGo(Algo):
             message = f'Close Long {self.symbol} {self.position_quantity}\nRepay All {self.base} {amount}'
             self.send_message(message)
             self.position_quantity = 0
+            return quantity
+        else:
+            log.order.info(f'CLOSE LONG > No Long Position to close!')
 
     def close_short(self):
+
         if self.position_quantity < 0:
+            quantity = -self.position_quantity
             ret = self.api.create_buy_order(self.symbol, -self.position_quantity)
-            log.order.info(f'CLOSE LONG > {ret}')
+            log.order.info(f'CLOSE SHORT > {ret}')
             amount = self.api.repay_all(self.base)
             log.order.info(f'REPAY ALL > {amount}')
             message = f'Close Short {self.symbol} {-self.position_quantity}\nRepay All {self.base} {amount}'
             self.send_message(message)
             self.position_quantity = 0
+            return quantity
+        else:
+            log.order.info(f'CLOSE SHORT > No Short Position to close!')
 
     def open_long(self):
+        log.order.info('========= GO LONG ==========')
         # 1. 빌린다.
         # 얼마나 빌릴지 계산.
         price = self.api.get_price(self.symbol)
@@ -113,34 +130,69 @@ class AlertGo(Algo):
         total_value = utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 1)
         max_budget = utils.floor_int(self.max_budget, 1)  # BTC 가격에 과적합된 코드
         amount = min(max_budget, total_value)
-        ret = self.api.create_loan(self.quote, amount)
-        log.order.info(f'LOAN > {ret}')
+        log.order.info(f'LOAN.. {self.quote} {amount}')
+        txId = self.api.create_loan(self.quote, amount)
+        time.sleep(self.loanDelay)
+        ret, detail = self.api.get_loan(self.quote, txId)
+        if ret != 0:
+            log.order.info(f'LOAN FAIL {detail}')
+            return
+        self.send_message(f'Loan! {self.quote} {amount}')
+
         # 2. 산다.
         quantity = utils.floor(amount / price, self.floor_decimals)
-        # TODO 1btc를 초과할경우 여러번 나누어 사는 것 고려..
-        ret = self.api.create_buy_order(self.symbol, quantity)
-        # 구매한 만큼 base_quantity 를 셋팅한다.
-        self.position_quantity = quantity
-        log.order.info(f'LONG > {ret}')
-        message = f'Loan {self.quote} {amount}\nLONG {self.symbol} {quantity}'
+        message = f'Long.. {self.symbol} {quantity}'
+        self.send_message(message)
+        # 1btc를 초과할경우 여러번 나누어 사는 것 고려..
+        togo = quantity
+        while togo > 0:
+            tobuy = math.min(self.buyBTCUnit, togo)
+            ret = self.api.create_buy_order(self.symbol, tobuy)
+            togo -= tobuy
+            self.position_quantity += tobuy
+            message = f'BUY > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
+            log.order.info(message)
+            self.send_message(message)
+            if togo > 0:
+                time.sleep(self.buyDelay)
+
+        message = f'Long! {self.symbol} {self.position_quantity}'
         self.send_message(message)
         self.wallet_summary()
 
     def open_short(self):
+        log.order.info('========= GO SHORT ==========')
         # 1. base 자산을 빌린다.
         price = self.api.get_price(self.symbol)
         info = self.api.margin_account_info()
         total_value = utils.floor(float(info["totalNetAssetOfBtc"]), self.floor_decimals)
         max_budget = utils.floor(self.max_budget / price, self.floor_decimals)  # BTC 가격에 과적합된 코드
-        amount = min(max_budget, total_value)
-        ret = self.api.create_loan(self.base, amount)
-        log.order.info(f'LOAN > {ret}')
+        quantity = min(max_budget, total_value)
+        log.order.info(f'LOAN.. {self.base} {quantity}')
+        txId = self.api.create_loan(self.base, quantity)
+        time.sleep(self.loanDelay)
+        ret, detail = self.api.get_loan(self.base, txId)
+        if ret != 0:
+            log.order.info(f'LOAN FAIL {detail}')
+            return
         # 2. 판다.
-        # TODO 1btc를 초과할경우 여러번 나누어 파는 것 고려..
-        ret = self.api.create_sell_order(self.symbol, amount)
-        self.position_quantity = -amount
-        log.order.info(f'SHORT > {ret}')
-        message = f'Loan {self.base} {amount}\nSHORT {self.symbol} {amount}'
+        # 1btc를 초과할경우 여러번 나누어 파는 것 고려..
+        message = f'Short.. {self.symbol} {quantity}'
+        self.send_message(message)
+
+        togo = quantity
+        while togo > 0:
+            tobuy = math.min(self.buyBTCUnit, togo)
+            ret = self.api.create_sell_order(self.symbol, tobuy)
+            togo -= tobuy
+            self.position_quantity -= tobuy
+            message = f'SELL > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
+            log.order.info(message)
+            self.send_message(message)
+            if togo > 0:
+                time.sleep(self.buyDelay)
+
+        message = f'Short! {self.symbol} {self.position_quantity}'
         self.send_message(message)
         self.wallet_summary()
 
@@ -154,9 +206,10 @@ class AlertGo(Algo):
 
         for item in info['userAssets']:
             if float(item['netAsset']) != 0.0:
-                desc = f"{desc}{item['asset']}: 순자산[{item['netAsset']}] " \
-                       f"가능[{item['free'] if item['free'] != item['netAsset'] else '동일'}] " \
-                       f"차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}]\n"
+                desc = f"{desc}{item['asset']}: " \
+                       f"가능[{item['free']}] " \
+                       f"차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}] " \
+                       f"순자산[{item['netAsset']}]\n"
         self.send_message(desc)
         print(desc)
 
@@ -169,12 +222,11 @@ class AlertGo(Algo):
         self.position_losscut_price = losscut_price
         self.position_entry_time = time
 
-    def calc_close(self, time, exit_price, entry_price):
+    def calc_close(self, time, exit_price, entry_price, quantity):
         # 이익 확인.
-        amount = self.position_quantity
-        profit = amount * ((exit_price - entry_price) / entry_price)
-        log.position.info(f'CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
-        self.send_message(f'CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
+        profit = quantity * ((exit_price - entry_price) / entry_price)
+        log.position.info(f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}')
+        self.send_message(f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}')
 
         self.total_profit += profit
         self.total_equity = self.init_capital + self.total_profit
@@ -228,8 +280,8 @@ if __name__ == '__main__':
     real_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    backtest=False, dry_run=False,
                    candle_period='1m',
-                   telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
-                   telegram_chat_id='352354994'
+                   # telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
+                   # telegram_chat_id='352354994'
                    )
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)

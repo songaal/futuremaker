@@ -91,7 +91,18 @@ class BinanceAPI:
 
     def create_loan(self, asset, amount):
         transaction = self.client.create_margin_loan(asset=asset, amount=amount)
-        return transaction
+        return transaction['tranId']
+
+    def get_loan(self, asset, txId):
+        details = self.client.get_margin_loan_details(asset=asset, txId=txId)
+        if details['rows'] == 0:
+            return -1, details
+        elif details['rows']['status'] == 'CONFIRMED':
+            # 성공
+            return 0, details
+        else:
+            # 실패
+            return 1, details
 
     def repay_loan(self, asset, amount):
         transaction = self.client.repay_margin_loan(asset=asset, amount=amount)

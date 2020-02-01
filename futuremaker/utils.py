@@ -141,7 +141,7 @@ def _extract_topic(topic_request):
 
 async def send_telegram(telegram_bot_token, telegram_chat_id, text):
     if telegram_bot_token and telegram_chat_id:
-        logger.info('Telegram %s [%s] [%s]', text, telegram_chat_id, telegram_bot_token)
+        # logger.info('Telegram %s [%s] [%s]', text, telegram_chat_id, telegram_bot_token)
         url = f'https://api.telegram.org/bot{telegram_bot_token}/sendMessage'
         data = {
             'chat_id': telegram_chat_id,
