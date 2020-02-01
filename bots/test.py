@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import sys
 from datetime import datetime
 
@@ -7,10 +8,7 @@ from futuremaker.binance_api import BinanceAPI
 from futuremaker.bot import Bot
 from futuremaker.algo import Algo
 from futuremaker import log
-
-class Type:
-    LONG = 'LONG'
-    SHORT = 'SHORT'
+from futuremaker.position_type import Type
 
 
 class AlertGo(Algo):
@@ -19,20 +17,18 @@ class AlertGo(Algo):
         self.base = base
         self.quote = quote
         self.symbol = f'{base}{quote}'
-        self.base_quantity = 0
+        self.position_quantity = 0
         self.floor_decimals = floor_decimals
+
+        self.init_capital = 10000
         #  트레이딩 최대예산. 이 수치를 넘어서 사지 않는다. 단위는 quote기준.
         self.max_budget = 50
 
-        self.init_capital = 10000
-        self.default_amount = self.init_capital * 0.8
-        self.long_amount = 0
-        self.long_entry_price = 0
-        self.long_losscut_price = 0
-        self.short_amount = 0
-        self.short_entry_price = 0
-        self.short_losscut_price = 0
+        self.position_quantity = 0
+        self.position_entry_price = 0
+        self.position_losscut_price = 0
         self.position_entry_time = datetime.fromtimestamp(0)
+
         self.total_profit = 0.0
         self.total_equity = self.init_capital
         self.win_profit = 0
@@ -49,54 +45,58 @@ class AlertGo(Algo):
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle):
-        print('strat: ', candle)
         time = candle.name
 
         # 첫진입.
-        if self.base_quantity == 0:
-            # self.buy_long()
-            self.open_position(Type.LONG, time, candle.close, 0)
+        if self.position_quantity == 0:
+            self.open_long()
+            self.calc_open(Type.LONG, time, candle.close, 0)
         else:
             # 롱 진입
-            if self.base_quantity < 0:
+            if self.position_quantity < 0:
+                self.calc_close(time, candle.close, self.position_entry_price)
                 self.close_short()
-                self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
-                # self.buy_long()
-                self.open_position(Type.LONG, time, candle.close, 0)
+                self.open_long()
+                self.calc_open(Type.LONG, time, candle.close, 0)
 
             # 숏 진입
-            elif self.base_quantity > 0:
+            elif self.position_quantity > 0:
+                self.calc_close(time, candle.close, self.position_entry_price)
                 self.close_long()
-                self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
-                # self.sell_short()
-                self.open_position(Type.SHORT, time, candle.close, 0)
+                self.open_short()
+                self.calc_open(Type.SHORT, time, candle.close, 0)
 
     def show_summary(self):
-        summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% P/L:{self.pnl_ratio:0.1f}'
+        summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} ' \
+                  f'TOT_PROFIT:{self.total_profit:.0f} ' \
+                  f'DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
+                  f'TOT_TRADE:{self.total_trade} ' \
+                  f'WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% ' \
+                  f'P/L:{self.pnl_ratio:0.1f}'
         log.position.info(summary)
         self.send_message(summary)
 
     def close_long(self):
-        if self.base_quantity > 0:
-            ret = self.api.create_sell_order(self.symbol, self.base_quantity)
+        if self.position_quantity > 0:
+            ret = self.api.create_sell_order(self.symbol, self.position_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
             amount = self.api.repay_all(self.quote)
             log.order.info(f'REPAY ALL > {amount}')
-            message = f'Close Long {self.symbol} {self.base_quantity}\nRepay All {self.base} {amount}'
+            message = f'Close Long {self.symbol} {self.position_quantity}\nRepay All {self.base} {amount}'
             self.send_message(message)
-            self.base_quantity = 0
+            self.position_quantity = 0
 
     def close_short(self):
-        if self.base_quantity < 0:
-            ret = self.api.create_buy_order(self.symbol, -self.base_quantity)
+        if self.position_quantity < 0:
+            ret = self.api.create_buy_order(self.symbol, -self.position_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
             amount = self.api.repay_all(self.base)
             log.order.info(f'REPAY ALL > {amount}')
-            message = f'Close Short {self.symbol} {-self.base_quantity}\nRepay All {self.base} {amount}'
+            message = f'Close Short {self.symbol} {-self.position_quantity}\nRepay All {self.base} {amount}'
             self.send_message(message)
-            self.base_quantity = 0
+            self.position_quantity = 0
 
-    def buy_long(self):
+    def open_long(self):
         # 1. 빌린다.
         # 얼마나 빌릴지 계산.
         price = self.api.get_price(self.symbol)
@@ -111,13 +111,13 @@ class AlertGo(Algo):
         # TODO 1btc를 초과할경우 여러번 나누어 사는 것 고려..
         ret = self.api.create_buy_order(self.symbol, quantity)
         # 구매한 만큼 base_quantity 를 셋팅한다.
-        self.base_quantity = quantity
+        self.position_quantity = quantity
         log.order.info(f'LONG > {ret}')
         message = f'Loan {self.quote} {amount}\nLONG {self.symbol} {quantity}'
         self.send_message(message)
         self.wallet_summary()
 
-    def sell_short(self):
+    def open_short(self):
         # 1. base 자산을 빌린다.
         price = self.api.get_price(self.symbol)
         info = self.api.margin_account_info()
@@ -129,7 +129,7 @@ class AlertGo(Algo):
         # 2. 판다.
         # TODO 1btc를 초과할경우 여러번 나누어 파는 것 고려..
         ret = self.api.create_sell_order(self.symbol, amount)
-        self.base_quantity = -amount
+        self.position_quantity = -amount
         log.order.info(f'SHORT > {ret}')
         message = f'Loan {self.base} {amount}\nSHORT {self.symbol} {amount}'
         self.send_message(message)
@@ -146,37 +146,33 @@ class AlertGo(Algo):
 
         for item in info['userAssets']:
             if float(item['netAsset']) != 0.0:
-                desc = f"{desc}{item['asset']}: 순자산[{item['netAsset']}] 가능[{item['free'] if item['free'] != item['netAsset'] else '동일'}] 차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}]\n"
+                desc = f"{desc}{item['asset']}: 순자산[{item['netAsset']}] " \
+                       f"가능[{item['free'] if item['free'] != item['netAsset'] else '동일'}] " \
+                       f"차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}]\n"
         self.send_message(desc)
         print(desc)
 
-    def open_position(self, type, time, price, losscut_price):
-        amount = int(self.total_equity * 1.0)
-        log.position.info(f'{time} OPEN {type} {amount}@{price}')
-        self.send_message(f'{time} OPEN {type} {amount}@{price}')
+    def calc_open(self, type, time, price, losscut_price):
+        message = f'OPEN {type} {self.symbol} {self.position_quantity}@{price}'
+        log.position.info(message)
+        self.send_message(message)
 
-        if type == Type.SHORT:
-            self.short_amount += amount
-            self.short_entry_price = price
-            self.short_losscut_price = losscut_price
-        elif type == Type.LONG:
-            self.long_amount += amount
-            self.long_entry_price = price
-            self.long_losscut_price = losscut_price
-
+        self.position_entry_price = price
+        self.position_losscut_price = losscut_price
         self.position_entry_time = time
 
-    def close_position(self, time, exit_price, entry_price, amount):
+    def calc_close(self, time, exit_price, entry_price):
         # 이익 확인.
+        amount = self.position_quantity
         profit = amount * ((exit_price - entry_price) / entry_price)
-        log.position.info(f'{time} CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
-        self.send_message(f'{time} CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
+        log.position.info(f'CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
+        self.send_message(f'CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
 
         self.total_profit += profit
         self.total_equity = self.init_capital + self.total_profit
         self.max_equity = max(self.max_equity, self.total_equity)
-        self.dd = (
-                          self.max_equity - self.total_equity) * 100 / self.max_equity if self.max_equity > 0 and self.max_equity - self.total_equity > 0 else 0
+        self.dd = (self.max_equity - self.total_equity) * 100 / self.max_equity \
+            if self.max_equity > 0 and self.max_equity - self.total_equity > 0 else 0
         self.mdd = max(self.mdd, self.dd)
         # trade 횟수.
         self.total_trade += 1
@@ -192,11 +188,16 @@ class AlertGo(Algo):
             self.pnl_ratio = 0
 
         # 초기화
-        self.long_amount = 0
-        self.short_amount = 0
+        self.position_quantity = 0
         self.position_entry_time = time
         # 요약
         self.show_summary()
+
+    def close_all(self, signum, frame):
+        """Log to system log. Do not spend too much time after receipt of TERM."""
+        print('Exit! ', signum)
+        # syslog.syslog(syslog.LOG_CRIT, 'Signal Number:%d {%s}' % (signum, frame))
+        # sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -224,7 +225,14 @@ if __name__ == '__main__':
                    )
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)
+
+    # register handler for SIGTERM(15) signal
+    signal.signal(signal.SIGTERM, algo.close_all)
+
     # algo.api = api
     # algo.wallet_summary()
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))
+
+
+

@@ -77,7 +77,7 @@ class Bot(object):
                             update_candle=algo.update_candle,
                             update_order=algo.update_order,
                             update_position=algo.update_position)
-        # ccxt api 연결.
+
         algo.api = self.api
         algo.send_message = self.send_message
 
