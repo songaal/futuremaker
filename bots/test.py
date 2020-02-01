@@ -67,11 +67,12 @@ class AlertGo(Algo):
                     self.close_long()
                     self.open_short()
                     self.calc_open(Type.SHORT, time, candle.close, 0)
-        except Exception:
+        except Exception as e:
             try:
                 exc_info = sys.exc_info()
             finally:
-                self.send_message(traceback.format_exception(*exc_info))
+                self.send_message(e)
+                traceback.print_exception(*exc_info)
                 del exc_info
 
     def show_summary(self):
