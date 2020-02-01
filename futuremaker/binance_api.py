@@ -2,7 +2,10 @@ import os
 
 from binance.client import Client
 from binance.enums import *
+from binance.exceptions import BinanceAPIException
 from binance.websockets import BinanceSocketManager
+
+from futuremaker import utils
 
 
 class BinanceAPI:
@@ -41,38 +44,44 @@ class BinanceAPI:
         return info
 
     def create_buy_order(self, symbol, quantity, price=None):
-        if price is not None:
-            order = self.client.create_margin_order(
-                symbol=symbol,
-                quantity=quantity,
-                price=price,
-                side=SIDE_BUY,
-                type=ORDER_TYPE_LIMIT,
-                timeInForce=TIME_IN_FORCE_GTC)
-        else:
-            order = self.client.create_margin_order(
-                symbol=symbol,
-                quantity=quantity,
-                side=SIDE_BUY,
-                type=ORDER_TYPE_MARKET)
-        return order
+        try:
+            if price is not None:
+                order = self.client.create_margin_order(
+                    symbol=symbol,
+                    quantity=quantity,
+                    price=price,
+                    side=SIDE_BUY,
+                    type=ORDER_TYPE_LIMIT,
+                    timeInForce=TIME_IN_FORCE_GTC)
+            else:
+                order = self.client.create_margin_order(
+                    symbol=symbol,
+                    quantity=quantity,
+                    side=SIDE_BUY,
+                    type=ORDER_TYPE_MARKET)
+            return order
+        except BinanceAPIException:
+            utils.print_traceback()
 
     def create_sell_order(self, symbol, quantity, price=None):
-        if price is not None:
-            order = self.client.create_margin_order(
-                symbol=symbol,
-                quantity=quantity,
-                price=price,
-                side=SIDE_SELL,
-                type=ORDER_TYPE_LIMIT,
-                timeInForce=TIME_IN_FORCE_GTC)
-        else:
-            order = self.client.create_margin_order(
-                symbol=symbol,
-                quantity=quantity,
-                side=SIDE_SELL,
-                type=ORDER_TYPE_MARKET)
-        return order
+        try:
+            if price is not None:
+                order = self.client.create_margin_order(
+                    symbol=symbol,
+                    quantity=quantity,
+                    price=price,
+                    side=SIDE_SELL,
+                    type=ORDER_TYPE_LIMIT,
+                    timeInForce=TIME_IN_FORCE_GTC)
+            else:
+                order = self.client.create_margin_order(
+                    symbol=symbol,
+                    quantity=quantity,
+                    side=SIDE_SELL,
+                    type=ORDER_TYPE_MARKET)
+            return order
+        except BinanceAPIException:
+            utils.print_traceback()
 
     def get_my_trades(self, symbol):
         return self.client.get_my_trades(symbol=symbol)
@@ -87,19 +96,26 @@ class BinanceAPI:
         return float(ticker[type])
 
     def create_loan(self, asset, amount):
-        transaction = self.client.create_margin_loan(asset=asset, amount=amount)
-        return transaction
+        try:
+            transaction = self.client.create_margin_loan(asset=asset, amount=amount)
+            return transaction
+        except BinanceAPIException:
+            utils.print_traceback()
 
     def repay_loan(self, asset, amount):
-        transaction = self.client.repay_margin_loan(asset=asset, amount=amount)
-        return transaction
+        try:
+            transaction = self.client.repay_margin_loan(asset=asset, amount=amount)
+            return transaction
+        except BinanceAPIException:
+            utils.print_traceback()
 
     def repay_all(self, asset):
         info = self.margin_account_info()
         obj = next(item for item in info['userAssets'] if item['asset'] == asset)
         total = float(obj['borrowed']) + float(obj['interest'])
         available = min(total, float(obj['free']))
-        return self.repay_loan(asset, available)
+        self.repay_loan(asset, available)
+        return available
 
     def asset_detail(self):
         details = self.client.get_asset_details()

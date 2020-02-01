@@ -54,42 +54,46 @@ class AlertGo(Algo):
 
         # 첫진입.
         if self.base_quantity == 0:
-            self.buy_long()
+            # self.buy_long()
             self.open_position(Type.LONG, time, candle.close, 0)
+        else:
+            # 롱 진입
+            if self.base_quantity < 0:
+                self.close_short()
+                self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
+                # self.buy_long()
+                self.open_position(Type.LONG, time, candle.close, 0)
 
-        # 롱 진입
-        if self.base_quantity < 0:
-            self.close_short()
-            self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
-            self.buy_long()
-            self.open_position(Type.LONG, time, candle.close, 0)
-
-        # 숏 진입
-        if self.base_quantity > 0:
-            self.close_long()
-            self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
-            self.sell_short()
-            self.open_position(Type.SHORT, time, candle.close, 0)
+            # 숏 진입
+            elif self.base_quantity > 0:
+                self.close_long()
+                self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
+                # self.sell_short()
+                self.open_position(Type.SHORT, time, candle.close, 0)
 
     def show_summary(self):
         summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% P/L:{self.pnl_ratio:0.1f}'
         log.position.info(summary)
-        self.send_telegram(summary)
+        self.send_message(summary)
 
     def close_long(self):
         if self.base_quantity > 0:
             ret = self.api.create_sell_order(self.symbol, self.base_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
-            ret = self.api.repay_all(self.base)
-            log.order.info(f'REPAY ALL > {ret}')
+            amount = self.api.repay_all(self.quote)
+            log.order.info(f'REPAY ALL > {amount}')
+            message = f'Close Long {self.symbol} {self.base_quantity}\nRepay All {self.base} {amount}'
+            self.send_message(message)
             self.base_quantity = 0
 
     def close_short(self):
         if self.base_quantity < 0:
             ret = self.api.create_buy_order(self.symbol, -self.base_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
-            ret = self.api.repay_all(self.quote)
-            log.order.info(f'REPAY ALL > {ret}')
+            amount = self.api.repay_all(self.base)
+            log.order.info(f'REPAY ALL > {amount}')
+            message = f'Close Short {self.symbol} {-self.base_quantity}\nRepay All {self.base} {amount}'
+            self.send_message(message)
             self.base_quantity = 0
 
     def buy_long(self):
@@ -109,6 +113,8 @@ class AlertGo(Algo):
         # 구매한 만큼 base_quantity 를 셋팅한다.
         self.base_quantity = quantity
         log.order.info(f'LONG > {ret}')
+        message = f'Loan {self.quote} {amount}\nLONG {self.symbol} {quantity}'
+        self.send_message(message)
         self.wallet_summary()
 
     def sell_short(self):
@@ -125,6 +131,8 @@ class AlertGo(Algo):
         ret = self.api.create_sell_order(self.symbol, amount)
         self.base_quantity = -amount
         log.order.info(f'SHORT > {ret}')
+        message = f'Loan {self.base} {amount}\nSHORT {self.symbol} {amount}'
+        self.send_message(message)
         self.wallet_summary()
 
     def wallet_summary(self):
@@ -139,12 +147,13 @@ class AlertGo(Algo):
         for item in info['userAssets']:
             if float(item['netAsset']) != 0.0:
                 desc = f"{desc}{item['asset']}: 순자산[{item['netAsset']}] 가능[{item['free'] if item['free'] != item['netAsset'] else '동일'}] 차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}]\n"
+        self.send_message(desc)
         print(desc)
 
     def open_position(self, type, time, price, losscut_price):
         amount = int(self.total_equity * 1.0)
         log.position.info(f'{time} OPEN {type} {amount}@{price}')
-        self.send_telegram(f'{time} OPEN {type} {amount}@{price}')
+        self.send_message(f'{time} OPEN {type} {amount}@{price}')
 
         if type == Type.SHORT:
             self.short_amount += amount
@@ -161,7 +170,7 @@ class AlertGo(Algo):
         # 이익 확인.
         profit = amount * ((exit_price - entry_price) / entry_price)
         log.position.info(f'{time} CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
-        self.send_telegram(f'{time} CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
+        self.send_message(f'{time} CLOSE {amount}@{exit_price} PROFIT: {profit:.0f}')
 
         self.total_profit += profit
         self.total_equity = self.init_capital + self.total_profit
@@ -190,15 +199,6 @@ class AlertGo(Algo):
         self.show_summary()
 
 
-class ExchangeAPI:
-    def __init__(self):
-        self.data = {}
-
-    def fetch_ohlcv(self, symbol, timeframe, since, limit):
-        # todo []에 ohlcv 5개 아이템이 차례대로 들어있다.
-        pass
-
-
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
 
@@ -219,8 +219,8 @@ if __name__ == '__main__':
     real_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    backtest=False, dry_run=False,
                    candle_period='1m',
-                   # telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
-                   # telegram_chat_id='352354994'
+                   telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
+                   telegram_chat_id='352354994'
                    )
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)

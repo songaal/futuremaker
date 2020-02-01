@@ -22,7 +22,7 @@ class CandleHandler(object):
         self.update_notify = _update_notify
         self.last_candle = None
 
-    def load(self):
+    def start(self):
         new_data = self.api.bulk_klines(symbol=self.symbol, timeframe=self.period, since=self.since)
         index_list = []
         data_list = []

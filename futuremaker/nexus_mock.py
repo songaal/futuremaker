@@ -57,12 +57,6 @@ class Nexus(object):
         except:
             utils.print_traceback()
 
-    async def wait_ready(self):
-        pass
-
-    def __getitem__(self, item):
-        return None
-
 
 class FileCandleHandler(object):
 

@@ -1,6 +1,7 @@
 import asyncio
 import concurrent
 import os
+import threading
 import time
 from datetime import datetime
 
@@ -30,7 +31,7 @@ class Bot(object):
         if not candle_period:
             raise Exception('candle_period must be set. 1m, 5m,..')
 
-        # self.exchange = exchange
+        self.messages = []
         self.api = api
         self.symbol = symbol
         self.candle_period = candle_period
@@ -43,12 +44,33 @@ class Bot(object):
         else:
             self.nexus = nexus_mock.Nexus(candle_limit, test_start, test_end, test_data)
 
-    async def send_telegram(self, text):
+    def start_sched(self):
+        loop = asyncio.new_event_loop()
+        # print('Thread Event Loop > ', loop)
+        loop.run_until_complete(self.sched())
+
+    async def sched(self):
+        while True:
+            try:
+                # print('Sched > ', datetime.now())
+                while self.messages:
+                    item = self.messages.pop()
+                    await self.__send_telegram(item)
+                    await asyncio.sleep(0.1)
+                else:
+                    await asyncio.sleep(1)
+            except:
+                utils.print_traceback()
+
+    def send_message(self, text):
         if not self.backtest:
-            if self.telegram_bot_token and self.telegram_chat_id:
-                return await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
-            else:
-                print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
+            self.messages.append(text)
+        else:
+            print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
+
+    async def __send_telegram(self, text):
+        if self.telegram_bot_token and self.telegram_chat_id:
+            return await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
 
     async def run(self, algo):
         self.nexus.callback(update_orderbook=algo.update_orderbook,
@@ -57,8 +79,7 @@ class Bot(object):
                             update_position=algo.update_position)
         # ccxt api 연결.
         algo.api = self.api
-        # algo.data = self.nexus.api.data
-        algo.send_telegram = self.send_telegram
+        algo.send_message = self.send_message
 
         try:
             logger.info('SYMBOL: %s', self.symbol)
@@ -70,10 +91,13 @@ class Bot(object):
             logger.info('TZNAME: %s', time.tzname)
             ip_address = requests.get('https://api.ipify.org?format=json').json()['ip']
             logger.info('IP: %s', ip_address)
-            await self.send_telegram(f'{algo.get_name()} Bot started.. {ip_address}')
+            self.send_message(f'{algo.get_name()} Bot started.. {ip_address}')
             logger.info('Loading...')
+
+            t = threading.Thread(target=self.start_sched,  daemon=True)
+            t.start()
             await self.nexus.load()
-            await self.nexus.wait_ready()
+            logger.info('Start!')
             await self.nexus.start()
         except KeyboardInterrupt:
             pass

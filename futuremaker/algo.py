@@ -58,5 +58,5 @@ class Algo(object):
         """
         pass
 
-    def send_telegram(self, text):
+    def send_message(self, text):
         pass

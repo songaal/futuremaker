@@ -1,5 +1,7 @@
 import datetime
 import asyncio
+import threading
+import time
 
 from futuremaker import utils
 from futuremaker.bitmex.bitmex_ws import BitmexWS
@@ -67,23 +69,14 @@ class Nexus(object):
             self.cb_update_candle(df, df.iloc[-1])
 
     async def load(self):
+        pass
+
+    async def start(self):
         try:
             if self.candle_handler:
                 # await
-                self.candle_handler.load()
+                self.candle_handler.start()
             else:
                 logger.info('candle_handler 를 사용하지 않습니다.')
         except:
             utils.print_traceback()
-
-    async def start(self):
-        pass
-        # await self.ws.listen()
-        # while True:
-        #     # self.candle_handler.update()
-        #     print(datetime.datetime.now())
-        #     await asyncio.sleep(2)
-
-    async def wait_ready(self):
-        # await self.ws.wait_ready()
-        pass
