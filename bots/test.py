@@ -2,7 +2,6 @@ import asyncio
 import sys
 from datetime import datetime
 
-from bots.week_breakout_indicator import WeekIndicator
 from futuremaker import utils
 from futuremaker.binance_api import BinanceAPI
 from futuremaker.bot import Bot
@@ -56,21 +55,21 @@ class AlertGo(Algo):
         # 첫진입.
         if self.base_quantity == 0:
             self.buy_long()
-            self.open_position(Type.LONG, time, candle.close, candle.long_break)
+            self.open_position(Type.LONG, time, candle.close, 0)
 
         # 롱 진입
         if self.base_quantity < 0:
             self.close_short()
             self.close_position(time, candle.close, self.short_entry_price, -self.short_amount)
             self.buy_long()
-            self.open_position(Type.LONG, time, candle.close, candle.long_break)
+            self.open_position(Type.LONG, time, candle.close, 0)
 
         # 숏 진입
         if self.base_quantity > 0:
             self.close_long()
             self.close_position(time, candle.close, self.long_entry_price, self.long_amount)
             self.sell_short()
-            self.open_position(Type.SHORT, time, candle.close, candle.short_break)
+            self.open_position(Type.SHORT, time, candle.close, 0)
 
     def show_summary(self):
         summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} TOT_PROFIT:{self.total_profit:.0f} DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% TOT_TRADE:{self.total_trade} WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% P/L:{self.pnl_ratio:0.1f}'
