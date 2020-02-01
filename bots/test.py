@@ -189,7 +189,7 @@ class AlertGo(Algo):
             ret = self.api.create_sell_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity -= tobuy
-            message = f'SELL > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
+            message = f'SELL > {ret["status"]} {ret["executedQty"]} {-self.position_quantity}/{quantity}'
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
@@ -283,8 +283,8 @@ if __name__ == '__main__':
     real_bot = Bot(api, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    backtest=False, dry_run=False,
                    candle_period='1m',
-                   # telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
-                   # telegram_chat_id='352354994'
+                   telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
+                   telegram_chat_id='352354994'
                    )
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)
