@@ -44,44 +44,38 @@ class BinanceAPI:
         return info
 
     def create_buy_order(self, symbol, quantity, price=None):
-        try:
-            if price is not None:
-                order = self.client.create_margin_order(
-                    symbol=symbol,
-                    quantity=quantity,
-                    price=price,
-                    side=SIDE_BUY,
-                    type=ORDER_TYPE_LIMIT,
-                    timeInForce=TIME_IN_FORCE_GTC)
-            else:
-                order = self.client.create_margin_order(
-                    symbol=symbol,
-                    quantity=quantity,
-                    side=SIDE_BUY,
-                    type=ORDER_TYPE_MARKET)
-            return order
-        except BinanceAPIException:
-            utils.print_traceback()
+        if price is not None:
+            order = self.client.create_margin_order(
+                symbol=symbol,
+                quantity=quantity,
+                price=price,
+                side=SIDE_BUY,
+                type=ORDER_TYPE_LIMIT,
+                timeInForce=TIME_IN_FORCE_GTC)
+        else:
+            order = self.client.create_margin_order(
+                symbol=symbol,
+                quantity=quantity,
+                side=SIDE_BUY,
+                type=ORDER_TYPE_MARKET)
+        return order
 
     def create_sell_order(self, symbol, quantity, price=None):
-        try:
-            if price is not None:
-                order = self.client.create_margin_order(
-                    symbol=symbol,
-                    quantity=quantity,
-                    price=price,
-                    side=SIDE_SELL,
-                    type=ORDER_TYPE_LIMIT,
-                    timeInForce=TIME_IN_FORCE_GTC)
-            else:
-                order = self.client.create_margin_order(
-                    symbol=symbol,
-                    quantity=quantity,
-                    side=SIDE_SELL,
-                    type=ORDER_TYPE_MARKET)
-            return order
-        except BinanceAPIException:
-            utils.print_traceback()
+        if price is not None:
+            order = self.client.create_margin_order(
+                symbol=symbol,
+                quantity=quantity,
+                price=price,
+                side=SIDE_SELL,
+                type=ORDER_TYPE_LIMIT,
+                timeInForce=TIME_IN_FORCE_GTC)
+        else:
+            order = self.client.create_margin_order(
+                symbol=symbol,
+                quantity=quantity,
+                side=SIDE_SELL,
+                type=ORDER_TYPE_MARKET)
+        return order
 
     def get_my_trades(self, symbol):
         return self.client.get_my_trades(symbol=symbol)
@@ -96,18 +90,12 @@ class BinanceAPI:
         return float(ticker[type])
 
     def create_loan(self, asset, amount):
-        try:
-            transaction = self.client.create_margin_loan(asset=asset, amount=amount)
-            return transaction
-        except BinanceAPIException:
-            utils.print_traceback()
+        transaction = self.client.create_margin_loan(asset=asset, amount=amount)
+        return transaction
 
     def repay_loan(self, asset, amount):
-        try:
-            transaction = self.client.repay_margin_loan(asset=asset, amount=amount)
-            return transaction
-        except BinanceAPIException:
-            utils.print_traceback()
+        transaction = self.client.repay_margin_loan(asset=asset, amount=amount)
+        return transaction
 
     def repay_all(self, asset):
         info = self.margin_account_info()

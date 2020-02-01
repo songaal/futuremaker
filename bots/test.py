@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import sys
+import traceback
 from datetime import datetime
 
 from futuremaker import utils
@@ -45,26 +46,33 @@ class AlertGo(Algo):
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle):
-        time = candle.name
+        try:
+            time = candle.name
 
-        # 첫진입.
-        if self.position_quantity == 0:
-            self.open_long()
-            self.calc_open(Type.LONG, time, candle.close, 0)
-        else:
-            # 롱 진입
-            if self.position_quantity < 0:
-                self.calc_close(time, candle.close, self.position_entry_price)
-                self.close_short()
+            # 첫진입.
+            if self.position_quantity == 0:
                 self.open_long()
                 self.calc_open(Type.LONG, time, candle.close, 0)
+            else:
+                # 롱 진입
+                if self.position_quantity < 0:
+                    self.calc_close(time, candle.close, self.position_entry_price)
+                    self.close_short()
+                    self.open_long()
+                    self.calc_open(Type.LONG, time, candle.close, 0)
 
-            # 숏 진입
-            elif self.position_quantity > 0:
-                self.calc_close(time, candle.close, self.position_entry_price)
-                self.close_long()
-                self.open_short()
-                self.calc_open(Type.SHORT, time, candle.close, 0)
+                # 숏 진입
+                elif self.position_quantity > 0:
+                    self.calc_close(time, candle.close, self.position_entry_price)
+                    self.close_long()
+                    self.open_short()
+                    self.calc_open(Type.SHORT, time, candle.close, 0)
+        except Exception:
+            try:
+                exc_info = sys.exc_info()
+            finally:
+                self.send_message(traceback.format_exception(*exc_info))
+                del exc_info
 
     def show_summary(self):
         summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} ' \
