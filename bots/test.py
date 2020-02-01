@@ -178,6 +178,8 @@ class AlertGo(Algo):
         if ret != 0:
             log.order.info(f'LOAN FAIL {detail}')
             return
+        self.send_message(f'Loan! {self.base} {quantity}')
+
         # 2. 판다.
         # 1btc를 초과할경우 여러번 나누어 파는 것 고려..
         message = f'Short.. {self.symbol} {quantity}'
