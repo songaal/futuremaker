@@ -94,6 +94,7 @@ class Bot(object):
             self.send_message(f'{algo.get_name()} Bot started.. {ip_address}')
             logger.info('Loading...')
 
+            algo.ready()
             t = threading.Thread(target=self.start_sched,  daemon=True)
             t.start()
             await self.nexus.load()

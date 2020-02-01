@@ -95,9 +95,9 @@ class BinanceAPI:
 
     def get_loan(self, asset, txId):
         details = self.client.get_margin_loan_details(asset=asset, txId=txId)
-        if details['rows'] == 0:
+        if len(details['rows']) == 0:
             return -1, details
-        elif details['rows']['status'] == 'CONFIRMED':
+        elif details['rows'][0]['status'] == 'CONFIRMED':
             # 성공
             return 0, details
         else:

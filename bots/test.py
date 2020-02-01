@@ -49,6 +49,9 @@ class AlertGo(Algo):
         self.buyDelay = 60
         self.buyBTCUnit = 1
 
+    def ready(self):
+        self.wallet_summary()
+
     # 1. 손절하도록. 손절하면 1일후에 집입토록.
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
@@ -146,7 +149,7 @@ class AlertGo(Algo):
         # 1btc를 초과할경우 여러번 나누어 사는 것 고려..
         togo = quantity
         while togo > 0:
-            tobuy = math.min(self.buyBTCUnit, togo)
+            tobuy = min(self.buyBTCUnit, togo)
             ret = self.api.create_buy_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity += tobuy
@@ -182,7 +185,7 @@ class AlertGo(Algo):
 
         togo = quantity
         while togo > 0:
-            tobuy = math.min(self.buyBTCUnit, togo)
+            tobuy = min(self.buyBTCUnit, togo)
             ret = self.api.create_sell_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity -= tobuy
@@ -205,13 +208,13 @@ class AlertGo(Algo):
                f'\n마진레벨[{utils.floor(float(info["marginLevel"]), 2)}]\n'
 
         for item in info['userAssets']:
-            if float(item['netAsset']) != 0.0:
+            if float(item['netAsset']) != 0.0 or float(item['free']) != 0.0:
                 desc = f"{desc}{item['asset']}: " \
                        f"가능[{item['free']}] " \
                        f"차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}] " \
                        f"순자산[{item['netAsset']}]\n"
         self.send_message(desc)
-        print(desc)
+        log.logger.info(desc)
 
     def calc_open(self, type, time, price, losscut_price):
         message = f'OPEN {type} {self.symbol} {self.position_quantity}@{price}'
