@@ -7,6 +7,7 @@ from datetime import datetime
 
 import requests
 from aiohttp import web
+from collections import deque
 
 from futuremaker import utils
 from futuremaker.nexus import Nexus
@@ -31,7 +32,7 @@ class Bot(object):
         if not candle_period:
             raise Exception('candle_period must be set. 1m, 5m,..')
 
-        self.messages = []
+        self.messages = deque()
         self.api = api
         self.symbol = symbol
         self.candle_period = candle_period
@@ -52,11 +53,10 @@ class Bot(object):
     async def sched(self):
         while True:
             try:
-                # print('Sched > ', datetime.now())
                 while self.messages:
-                    item = self.messages.pop()
+                    item = self.messages.popleft()
                     await self.__send_telegram(item)
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(0.5)
                 else:
                     await asyncio.sleep(1)
             except:

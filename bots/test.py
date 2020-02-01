@@ -138,8 +138,7 @@ class AlertGo(Algo):
     def wallet_summary(self):
         price = self.api.get_price('BTCUSDT')
         info = self.api.margin_account_info()
-        desc = '-----------------------'
-        desc = f'{desc}\n{datetime.now()}'
+        desc = f'{datetime.now()}'
         desc = f'{desc}\n자산가치[$ {utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 0)} = ' \
                f'{utils.floor(float(info["totalNetAssetOfBtc"]), 3)} BTC]' \
                f'\n마진레벨[{utils.floor(float(info["marginLevel"]), 2)}]\n'
