@@ -18,12 +18,9 @@ from futuremaker.log import logger
 class Bot(object):
     """
     봇.
-    nexus 객체를 가지고 있으며 다음과 같이 사용가능하다.
-    nexus.api: 오더, 잔고, 히스토리 api 호출
-    nexus['<토픽'>]: 웹소켓으로 업데이트되는 토픽데이터가 담기는 저장소. 값이 필요할때 접근가능하다.
     """
 
-    def __init__(self, api, symbol, candle_limit=20, candle_period='1h', since=None, dry_run=True,
+    def __init__(self, api, symbol, candle_limit=20, candle_period='1h',
                  backtest=True, test_start=None, test_end=None, test_data=None,
                  telegram_bot_token=None, telegram_chat_id=None):
 
@@ -41,7 +38,7 @@ class Bot(object):
         self.telegram_chat_id = telegram_chat_id
 
         if not self.backtest:
-            self.nexus = Nexus(api, symbol, candle_limit=candle_limit, candle_period=candle_period, dry_run=dry_run)
+            self.nexus = Nexus(api, symbol, candle_limit=candle_limit, candle_period=candle_period)
         else:
             self.nexus = nexus_mock.Nexus(candle_limit, test_start, test_end, test_data)
 
@@ -65,22 +62,19 @@ class Bot(object):
     def send_message(self, text):
         if not self.backtest:
             self.messages.append(text)
-        else:
-            print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
 
     async def __send_telegram(self, text):
         if self.telegram_bot_token and self.telegram_chat_id:
             return await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
+        else:
+            print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
 
     async def run(self, algo):
-        self.nexus.callback(update_orderbook=algo.update_orderbook,
-                            update_candle=algo.update_candle,
-                            update_order=algo.update_order,
-                            update_position=algo.update_position)
+        self.nexus.callback(update_candle=algo.update_candle)
 
         algo.api = self.api
         algo.send_message = self.send_message
-
+        algo.backtest = self.backtest
         try:
             logger.info('SYMBOL: %s', self.symbol)
             logger.info('CANDLE_PERIOD: %s', self.candle_period)
@@ -95,8 +89,9 @@ class Bot(object):
             logger.info('Loading...')
 
             algo.ready()
-            t = threading.Thread(target=self.start_sched,  daemon=True)
-            t.start()
+            if not self.backtest:
+                t = threading.Thread(target=self.start_sched,  daemon=True)
+                t.start()
             await self.nexus.load()
             logger.info('Start!')
             await self.nexus.start()

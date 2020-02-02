@@ -47,20 +47,12 @@ class Nexus(object):
             # 현재시각에서 since를 뺀 날짜를 string으로 만든다.
             self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, since=since, _update_notify=self._update_candle)
 
-    def callback(self, update_orderbook=None, update_candle=None, update_order=None, update_position=None):
+    def callback(self, update_candle=None):
         """
         데이터 변경시 호출되는 콜백함수들을 설정한다.
-        :param update_orderbook: 호가창 업데이트시마다 호출. 매우 빈번히 호출.
         :param update_candle: 캔들업데이트시 호출되는 콜백함수. 캔들의 period 마다 호출된다.
-        :param update_order: 주문이 성공되거나 할때 호출되는 콜백함수
-        :param update_position: 포지션 변경시 호출되는 콜백함수
-        :return:
         """
         self.cb_update_candle = update_candle
-        # self.ws.update_orderbook = update_orderbook
-        # self.ws.update_candle = self._update_candle
-        # self.ws.update_order = update_order
-        # self.ws.update_position = update_position
 
     # candle handler 에서 호출해준다.
     def _update_candle(self, df):
