@@ -66,6 +66,7 @@ class AlertGo(Algo):
             else:
                 # 롱 진입
                 if self.position_quantity < 0:
+                    log.logger.info('-- Enter Long')
                     quantity = self.close_short()
                     self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_long()
@@ -73,6 +74,7 @@ class AlertGo(Algo):
 
                 # 숏 진입
                 elif self.position_quantity > 0:
+                    log.logger.info('-- Enter Short')
                     quantity = self.close_long()
                     self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_short()
@@ -113,11 +115,11 @@ class AlertGo(Algo):
 
         if self.position_quantity < 0:
             quantity = -self.position_quantity
-            ret = self.api.create_buy_order(self.symbol, -self.position_quantity)
+            ret = self.api.create_buy_order(self.symbol, quantity)
             log.order.info(f'CLOSE SHORT > {ret}')
             amount = self.api.repay_all(self.base)
             log.order.info(f'REPAY ALL > {amount}')
-            message = f'Close Short {self.symbol} {-self.position_quantity}\nRepay All {self.base} {amount}'
+            message = f'Close Short {self.symbol} {quantity}\nRepay All {self.base} {amount}'
             self.send_message(message)
             self.position_quantity = 0
             return quantity
@@ -126,6 +128,7 @@ class AlertGo(Algo):
 
     def open_long(self):
         log.order.info('========= GO LONG ==========')
+        self.wallet_summary()
         # 1. 빌린다.
         # 얼마나 빌릴지 계산.
         price = self.api.get_price(self.symbol)
@@ -165,6 +168,7 @@ class AlertGo(Algo):
 
     def open_short(self):
         log.order.info('========= GO SHORT ==========')
+        self.wallet_summary()
         # 1. base 자산을 빌린다.
         price = self.api.get_price(self.symbol)
         info = self.api.margin_account_info()
