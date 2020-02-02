@@ -63,7 +63,7 @@ class Algo(object):
 
     def show_summary(self):
         summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} ' \
-                  f'TOT_PROFIT:{self.total_profit:.0f} ({self.total_profit/self.total_equity*100.0:.2f}%) ' \
+                  f'TOT_PROFIT:{self.total_profit:.0f} ({self.total_profit / self.init_capital * 100.0:.2f}%) ' \
                   f'DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
                   f'TOT_TRADE:{self.total_trade} ' \
                   f'WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% ' \
@@ -228,7 +228,7 @@ class Algo(object):
         self.send_message(desc)
         log.logger.info(desc)
 
-    def calc_open(self, type, time, price, losscut_price):
+    def calc_open(self, type, this_time, price, losscut_price):
         if self.backtest:
             # 백테스트는 open_short, open_long을 실행하지 않으므로, self.position_quantity 룰 여기서 계산해준다.
             total_value = utils.floor(self.total_equity / price, self.floor_decimals)
@@ -236,19 +236,34 @@ class Algo(object):
             quantity = min(max_amount, total_value)
             self.position_quantity = -quantity if type == Type.SHORT else quantity
 
-        message = f'{time} OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
+        message = f'{this_time} OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
                   f'============================'
         log.position.info(message)
         self.send_message(message)
 
         self.position_entry_price = price
         self.position_losscut_price = losscut_price
-        self.position_entry_time = time
+        self.position_entry_time = this_time
 
-    def calc_close(self, time, exit_price, entry_price, quantity):
+    def estimated_profit(self, this_time, current_price):
+        if self.position_entry_price == 0:
+            return
+
+        estimated_profit = self.position_quantity * ((current_price - self.position_entry_price) / self.position_entry_price) * current_price
+        estimated_equity = self.total_equity + estimated_profit
+        max_equity = max(self.max_equity, estimated_equity)
+        drawdown = (max_equity - estimated_equity) * 100 / max_equity \
+            if max_equity > 0 and max_equity - estimated_equity > 0 else 0
+        if drawdown > self.mdd:
+            self.mdd = max(self.mdd, drawdown)
+            message = f'{this_time} New MDD:{drawdown:0.2f}% @{current_price} TOT_EQUITY:{estimated_equity:0.0f}'
+            log.logger.info(message)
+            self.send_message(message)
+
+    def calc_close(self, this_time, exit_price, entry_price, quantity):
         # 이익 확인.
         profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
-        message = f'{time} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}'
+        message = f'{this_time} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}'
         log.position.info(message)
         self.send_message(message)
 
@@ -273,6 +288,6 @@ class Algo(object):
 
         # 초기화
         self.position_quantity = 0
-        self.position_entry_time = time
+        self.position_entry_time = this_time
         # 요약
         self.show_summary()

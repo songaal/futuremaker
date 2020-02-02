@@ -72,7 +72,7 @@ class FileCandleHandler(object):
         return datetime.fromtimestamp(float(time_in_secs))
 
     def load(self):
-        print(f'Load data: {os.path.abspath(self.filepath)}')
+        logger.info(f'Load data: {os.path.abspath(self.filepath)}')
         self._data = pd.read_csv(self.filepath, index_col='time',
                                  usecols=['time', 'open', 'high', 'low', 'close', 'volume'],
                                  parse_dates=['time'],
