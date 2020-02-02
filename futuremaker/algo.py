@@ -236,7 +236,7 @@ class Algo(object):
             quantity = min(max_amount, total_value)
             self.position_quantity = -quantity if type == Type.SHORT else quantity
 
-        message = f'OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
+        message = f'{time} OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
                   f'============================'
         log.position.info(message)
         self.send_message(message)
@@ -247,8 +247,8 @@ class Algo(object):
 
     def calc_close(self, time, exit_price, entry_price, quantity):
         # 이익 확인.
-        profit = quantity * ((exit_price - entry_price) / entry_price)
-        message = f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}'
+        profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
+        message = f'{time} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}'
         log.position.info(message)
         self.send_message(message)
 
