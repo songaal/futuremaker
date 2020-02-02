@@ -57,5 +57,9 @@ def test_ws_kline():
 def get_my_trade():
     print(api.get_my_trades(symbol))
 
-get_my_trade()
 
+def test_get_balance():
+    print(api.get_balance('USDT'))
+
+
+test_get_balance()

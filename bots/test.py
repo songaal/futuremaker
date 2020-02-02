@@ -99,6 +99,7 @@ class AlertGo(Algo):
 
     def close_long(self):
         if self.position_quantity > 0:
+            # 홀드하던 BTC를 판다.
             quantity = self.position_quantity
             ret = self.api.create_sell_order(self.symbol, self.position_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
@@ -115,7 +116,17 @@ class AlertGo(Algo):
     def close_short(self):
 
         if self.position_quantity < 0:
+            # 1. USDT 가 충분한지 확인해서 부족하면 빌린다. 숏 포지션에서 가격이 올랐을 경우가 이에 속한다.
             quantity = -self.position_quantity
+            ask_price = self.api.get_price(self.symbol, price_type='askPrice')
+            budget = quantity * ask_price
+            balance = self.api.get_balance(self.quote)
+            if budget > balance:
+                loan_amount = budget - balance
+                loan_amount = utils.round_up(loan_amount, 10)  # 10의 배수를 얻는다.
+                self.make_loan(self.quote, loan_amount)
+
+            # 2. 자금을 가지고 BTC를 산다.
             ret = self.api.create_buy_order(self.symbol, quantity)
             log.order.info(f'CLOSE SHORT > {ret}')
             amount = self.api.repay_all(self.base)
@@ -128,6 +139,16 @@ class AlertGo(Algo):
         else:
             log.order.info(f'CLOSE SHORT > No Short Position to close!')
 
+    def make_loan(self, asset, amount):
+        log.order.info(f'LOAN.. {asset} {amount}')
+        txId = self.api.create_loan(asset, amount)
+        time.sleep(self.loanDelay)
+        ret, detail = self.api.get_loan(asset, txId)
+        if ret != 0:
+            log.order.info(f'LOAN FAIL {detail}')
+            return
+        self.send_message(f'Loan! {asset} {amount}')
+
     def open_long(self):
         log.order.info('========= GO LONG ==========')
         # 1. 빌린다.
@@ -137,14 +158,7 @@ class AlertGo(Algo):
         total_value = utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 1)
         max_budget = utils.floor_int(self.max_budget, 1)  # BTC 가격에 과적합된 코드
         amount = min(max_budget, total_value)
-        log.order.info(f'LOAN.. {self.quote} {amount}')
-        txId = self.api.create_loan(self.quote, amount)
-        time.sleep(self.loanDelay)
-        ret, detail = self.api.get_loan(self.quote, txId)
-        if ret != 0:
-            log.order.info(f'LOAN FAIL {detail}')
-            return
-        self.send_message(f'Loan! {self.quote} {amount}')
+        self.make_loan(self.quote, amount)
 
         # 2. 산다.
         quantity = utils.floor(amount / price, self.floor_decimals)
@@ -175,14 +189,7 @@ class AlertGo(Algo):
         total_value = utils.floor(float(info["totalNetAssetOfBtc"]), self.floor_decimals)
         max_budget = utils.floor(self.max_budget / price, self.floor_decimals)  # BTC 가격에 과적합된 코드
         quantity = min(max_budget, total_value)
-        log.order.info(f'LOAN.. {self.base} {quantity}')
-        txId = self.api.create_loan(self.base, quantity)
-        time.sleep(self.loanDelay)
-        ret, detail = self.api.get_loan(self.base, txId)
-        if ret != 0:
-            log.order.info(f'LOAN FAIL {detail}')
-            return
-        self.send_message(f'Loan! {self.base} {quantity}')
+        self.make_loan(self.base, quantity)
 
         # 2. 판다.
         # 1btc를 초과할경우 여러번 나누어 파는 것 고려..

@@ -80,14 +80,14 @@ class BinanceAPI:
     def get_my_trades(self, symbol):
         return self.client.get_my_trades(symbol=symbol)
 
-    def get_price(self, symbol, type='lastPrice'):
+    def get_price(self, symbol, price_type='lastPrice'):
         """
         :param symbol:
-        :param type: bidPrice, askPrice, lastPrice
+        :param price_type: bidPrice, askPrice, lastPrice
         :return:
         """
         ticker = self.client.get_ticker(symbol=symbol)
-        return float(ticker[type])
+        return float(ticker[price_type])
 
     def create_loan(self, asset, amount):
         transaction = self.client.create_margin_loan(asset=asset, amount=amount)
@@ -135,3 +135,8 @@ class BinanceAPI:
 
     def stop_websocket(self):
         self.ws.stop_socket(self.conn_key)
+
+    def get_balance(self, asset):
+        info = self.margin_account_info()
+        o = next(item['free'] for item in info['userAssets'] if item['asset'] == asset)
+        return o

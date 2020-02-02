@@ -151,3 +151,9 @@ async def send_telegram(telegram_bot_token, telegram_chat_id, text):
             async with session.post(url, data=data) as response:
                 resp = await response.text()
                 return resp
+
+
+def round_up(num, unit=10):
+    a = (int(num / unit) + 1) * unit
+    print(num , ' =>', a)
+    return a
