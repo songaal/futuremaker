@@ -26,6 +26,7 @@ class AlertGo(Algo):
     def update_candle(self, df, candle):
         try:
             time = candle.name
+            self.estimated_profit(time, candle.close)
 
             # 첫진입.
             if self.position_quantity == 0:

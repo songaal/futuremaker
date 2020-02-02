@@ -18,19 +18,17 @@ class Nexus(object):
     nexus.api.put_order() 와 같이 사용.
     """
 
-    def __init__(self, api, symbol, candle_limit, candle_period=None, dry_run=True):
+    def __init__(self, api, symbol, candle_limit, candle_period=None):
         """
         :param symbol: 심볼페어. XBTUSD, BTC/USD
-        :param dry_run: 참일 경우 실제 주문 api를 호출하지 않는다.
         :param candle_limit: 저장할 최대 캔들갯수.
         :param candle_period: 봉주기. Bitmex는 4가지만 지원한다. 1m, 5m, 1h, 1d
         """
         self.candle_handler = None
         self.api = api
         self.cb_update_candle = None
-        self.dry_run = dry_run
 
-        logger.info(f'Nexus symbol[{symbol}] period[{candle_period}] dry_run[{dry_run}]')
+        logger.info(f'Nexus symbol[{symbol}] period[{candle_period}]')
 
         if candle_limit and candle_period:
             period_in_second = 0

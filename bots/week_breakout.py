@@ -34,9 +34,11 @@ class WeekBreakout(Algo):
             if (this_time - self.position_entry_time).days >= 1:
                 if self.position_quantity < 0:
                     # 먼저 숏 포지션을 CLOSE 한다.
-                    self.calc_close(this_time, candle.close, self.position_entry_price, self.position_quantity)
+                    quantity = self.close_short()
+                    self.calc_close(this_time, candle.close, self.position_entry_price, -quantity)
                 # 롱 진입
                 if self.position_quantity == 0:
+                    self.open_long()
                     self.calc_open(Type.LONG, this_time, candle.close, candle.long_break)
 
         # 2. candle 이 short_break 를 뚫으면 숏 포지션을 취한다.
@@ -44,10 +46,12 @@ class WeekBreakout(Algo):
             if (this_time - self.position_entry_time).days >= 1:
                 # short 수행.
                 if self.position_quantity > 0:
-                    self.calc_close(this_time, candle.close, self.position_entry_price, self.position_quantity)
+                    quantity = self.close_long()
+                    self.calc_close(this_time, candle.close, self.position_entry_price, quantity)
                     # 먼저 롱 포지션을 CLOSE 한다.
                 # 숏 진입
                 if self.position_quantity == 0:
+                    self.open_short()
                     self.calc_open(Type.SHORT, this_time, candle.close, candle.short_break)
 
         # 3. 롱 포지션 손절.
@@ -55,19 +59,21 @@ class WeekBreakout(Algo):
             if candle.close < min(candle.long_break,
                                   self.position_losscut_price) < candle.open:  # 롱 라인을 뚫고 내려올때. min을 사용하여 좀더 여유확보.
                 if (this_time - self.position_entry_time).days >= 1:
-                    self.calc_close(this_time, candle.close, self.position_entry_price, self.position_quantity)
+                    quantity = self.close_long()
+                    self.calc_close(this_time, candle.close, self.position_entry_price, quantity)
 
         # 4. 숏 포지션 손절.
         if self.position_quantity < 0:
             if candle.close > min(candle.short_break,
                                   self.position_losscut_price) > candle.open:  # 숏 라인을 뚫고 올라올때. min을 사용하여 빠른 손절.
                 if (this_time - self.position_entry_time).days >= 1:
-                    self.calc_close(this_time, candle.close, self.position_entry_price, self.position_quantity)
+                    quantity = self.close_short()
+                    self.calc_close(this_time, candle.close, self.position_entry_price, -quantity)
 
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    year = 2019
+    year = 2018
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
@@ -86,5 +92,5 @@ if __name__ == '__main__':
     algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=1000000,
                         week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)
 
-    asyncio.run(test_bot.run(algo))
-    # asyncio.run(real_bot.run(algo))
+    # asyncio.run(test_bot.run(algo))
+    asyncio.run(real_bot.run(algo))
