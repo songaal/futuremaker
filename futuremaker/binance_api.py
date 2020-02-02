@@ -139,4 +139,4 @@ class BinanceAPI:
     def get_balance(self, asset):
         info = self.margin_account_info()
         o = next(item['free'] for item in info['userAssets'] if item['asset'] == asset)
-        return o
+        return float(o)

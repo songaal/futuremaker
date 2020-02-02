@@ -5,8 +5,6 @@ import time
 import traceback
 from datetime import datetime
 
-import math
-
 from futuremaker import utils
 from futuremaker.binance_api import BinanceAPI
 from futuremaker.bot import Bot
@@ -66,7 +64,7 @@ class AlertGo(Algo):
             else:
                 # 롱 진입
                 if self.position_quantity < 0:
-                    log.logger.info('-- Enter Long')
+                    log.logger.info('--> Enter Long <--')
                     quantity = self.close_short()
                     self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_long()
@@ -74,7 +72,7 @@ class AlertGo(Algo):
 
                 # 숏 진입
                 elif self.position_quantity > 0:
-                    log.logger.info('-- Enter Short')
+                    log.logger.info('--> Enter Short <--')
                     quantity = self.close_long()
                     self.calc_close(time, candle.close, self.position_entry_price, quantity)
                     self.open_short()
@@ -93,7 +91,8 @@ class AlertGo(Algo):
                   f'DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
                   f'TOT_TRADE:{self.total_trade} ' \
                   f'WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% ' \
-                  f'P/L:{self.pnl_ratio:0.1f}'
+                  f'P/L:{self.pnl_ratio:0.1f}\n' \
+                  f'============================'
         log.position.info(summary)
         self.send_message(summary)
 
@@ -147,6 +146,7 @@ class AlertGo(Algo):
         if ret != 0:
             log.order.info(f'LOAN FAIL {detail}')
             return
+        log.order.info(f'LOAN! {asset} {amount}')
         self.send_message(f'Loan! {asset} {amount}')
 
     def open_long(self):
@@ -213,6 +213,7 @@ class AlertGo(Algo):
         self.wallet_summary()
 
     def wallet_summary(self):
+        time.sleep(1)
         price = self.api.get_price('BTCUSDT')
         info = self.api.margin_account_info()
         desc = f'{datetime.now()}'
@@ -223,14 +224,15 @@ class AlertGo(Algo):
         for item in info['userAssets']:
             if float(item['netAsset']) != 0.0 or float(item['free']) != 0.0:
                 desc = f"{desc}{item['asset']}: " \
-                       f"가능[{item['free']}] " \
-                       f"차용[{0 if float(item['borrowed']) == 0.0 else item['borrowed']}] " \
-                       f"순자산[{item['netAsset']}]\n"
+                       f"가능[{utils.floor(float(item['free']), 3)}] " \
+                       f"차용[{0 if float(item['borrowed']) == 0.0 else utils.floor(float(item['borrowed']), 3)}] " \
+                       f"순자산[{utils.floor(float(item['netAsset']), 3)}]\n"
         self.send_message(desc)
         log.logger.info(desc)
 
     def calc_open(self, type, time, price, losscut_price):
-        message = f'OPEN {type} {self.symbol} {self.position_quantity}@{price}'
+        message = f'OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
+                  f'============================'
         log.position.info(message)
         self.send_message(message)
 
@@ -241,8 +243,9 @@ class AlertGo(Algo):
     def calc_close(self, time, exit_price, entry_price, quantity):
         # 이익 확인.
         profit = quantity * ((exit_price - entry_price) / entry_price)
-        log.position.info(f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}')
-        self.send_message(f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}')
+        message = f'CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f}'
+        log.position.info(message)
+        self.send_message(message)
 
         self.total_profit += profit
         self.total_equity = self.init_capital + self.total_profit
@@ -268,12 +271,6 @@ class AlertGo(Algo):
         self.position_entry_time = time
         # 요약
         self.show_summary()
-
-    def close_all(self, signum, frame):
-        """Log to system log. Do not spend too much time after receipt of TERM."""
-        print('Exit! ', signum)
-        # syslog.syslog(syslog.LOG_CRIT, 'Signal Number:%d {%s}' % (signum, frame))
-        # sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -302,11 +299,6 @@ if __name__ == '__main__':
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3)
 
-    # register handler for SIGTERM(15) signal
-    signal.signal(signal.SIGTERM, algo.close_all)
-
-    # algo.api = api
-    # algo.wallet_summary()
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))
 

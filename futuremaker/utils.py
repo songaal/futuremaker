@@ -154,6 +154,4 @@ async def send_telegram(telegram_bot_token, telegram_chat_id, text):
 
 
 def round_up(num, unit=10):
-    a = (int(num / unit) + 1) * unit
-    print(num , ' =>', a)
-    return a
+    return (int(num / unit) + 1) * unit
