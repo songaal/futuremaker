@@ -3,6 +3,7 @@ import json
 import os
 import time
 from datetime import datetime
+from json import JSONDecodeError
 
 from futuremaker import utils
 from futuremaker.binance_api import BinanceAPI
@@ -63,6 +64,9 @@ class Algo(object):
         """
         봇이 시작할때 기존 포지션 정보가 없으므로, 로드하도록 한다.
         """
+        if self.backtest:
+            return
+
         # 파일이 없으면 먼저 하나를 만들어준다.
         if not os.path.isfile(self.STATUS_FILE):
             self.save_status()
@@ -94,16 +98,16 @@ class Algo(object):
                       f'position_quantity[{self.position_quantity}]\n' \
                       f'position_entry_price[{self.position_entry_price}]\n' \
                       f'position_losscut_price[{self.position_losscut_price}]\n' \
-                      f'position_entry_time[{self.position_entry_time}]' \
-                      f'total_equity[{self.total_equity}]' \
-                      f'total_profit[{self.total_profit}]' \
-                      f'init_capital[{self.init_capital}]' \
-                      f'max_equity[{self.max_equity}]' \
-                      f'mdd[{self.mdd}]' \
-                      f'total_trade[{self.total_trade}]' \
-                      f'win_trade[{self.win_trade}]' \
-                      f'win_profit[{self.win_profit}]' \
-                      f'lose_trade[{self.lose_trade}]' \
+                      f'position_entry_time[{self.position_entry_time}]\n' \
+                      f'total_equity[{self.total_equity}]\n' \
+                      f'total_profit[{self.total_profit}]\n' \
+                      f'init_capital[{self.init_capital}]\n' \
+                      f'max_equity[{self.max_equity}]\n' \
+                      f'mdd[{self.mdd}]\n' \
+                      f'total_trade[{self.total_trade}]\n' \
+                      f'win_trade[{self.win_trade}]\n' \
+                      f'win_profit[{self.win_profit}]\n' \
+                      f'lose_trade[{self.lose_trade}]\n' \
                       f'loss_profit[{self.loss_profit}]'
 
             log.logger.info(message)
@@ -119,6 +123,9 @@ class Algo(object):
         "position_losscut_price": 8430,
         "position_entry_time": "2020-01-20T00:00:00Z"
         """
+        if self.backtest:
+            return
+
         status_data = {
             "base": self.base,
             "quote": self.quote,
@@ -162,17 +169,23 @@ class Algo(object):
                 "total_trade":
             }
         }
-        :return:
         """
+        if self.backtest:
+            return
+
         trade_data = []
         if os.path.isfile(self.TRADE_FILE):
-            with open(self.TRADE_FILE, 'r') as file:
-                trade_data = json.load(file)
+            try:
+                with open(self.TRADE_FILE, 'r') as file:
+                    trade_data = json.load(file)
+            except JSONDecodeError:
+                pass
 
         with open(self.TRADE_FILE, 'w') as file:
             trade_data.append(trade)
             json_val = json.dumps(trade_data, indent=4)
             file.write(f'{json_val}\n')
+            print(json_val)
 
     def update_candle(self, df, candle):
         """
@@ -361,8 +374,8 @@ class Algo(object):
         # 상태저장
         self.save_status()
         self.append_trade({
-            "tradeTime": this_time,
-            "datetime": this_time,
+            "tradeTime": this_time.timestamp(),
+            "datetime": this_time.strftime(self.DATETIME_FORMAT),
             "symbol": self.symbol,
             "position": type,
             "price": price,
@@ -379,7 +392,7 @@ class Algo(object):
         self.send_message(message)
 
         self.total_profit += profit
-        total_profit_pct = self.total_profit / self.init_capital * 100.0,
+        total_profit_pct = self.total_profit / self.init_capital * 100.0
         self.total_equity = self.init_capital + self.total_profit
         self.max_equity = max(self.max_equity, self.total_equity)
         dd = (self.max_equity - self.total_equity) * 100 / self.max_equity \
@@ -408,8 +421,8 @@ class Algo(object):
         # 상태저장
         self.save_status()
         self.append_trade({
-            "tradeTime": this_time,
-            "datetime": this_time,
+            "tradeTime": this_time.timestamp(),
+            "datetime": this_time.strftime(self.DATETIME_FORMAT),
             "symbol": self.symbol,
             "position": 'NONE',
             "entry_price": entry_price,
@@ -440,7 +453,7 @@ class Algo(object):
                   f'DD:{dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
                   f'TOT_TRADE:{self.total_trade} ' \
                   f'WIN%:{win_pct:2.1f}% ' \
-                  f'P/L:{self.pnl_ratio:0.1f}\n' \
+                  f'P/L:{pnl_ratio:0.1f}\n' \
                   f'============================'
         log.position.info(summary)
         self.send_message(summary)

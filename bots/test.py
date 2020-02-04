@@ -78,8 +78,8 @@ if __name__ == '__main__':
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=1000000)
 
-    asyncio.run(test_bot.run(algo))
-    # asyncio.run(real_bot.run(algo))
+    # asyncio.run(test_bot.run(algo))
+    asyncio.run(real_bot.run(algo))
 
 
 
