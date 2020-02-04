@@ -1,0 +1,9 @@
+{
+    "base": "BTC",
+    "quote": "USDT",
+    "init_capital": 10000,
+    "position_quantity": 0,
+    "position_entry_price": 0,
+    "position_losscut_price": 0,
+    "position_entry_time": "2020-02-04T15:30:25.211928Z"
+}

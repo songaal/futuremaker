@@ -1,5 +1,6 @@
 import asyncio
 import concurrent
+import json
 import os
 import threading
 import time
@@ -88,7 +89,11 @@ class Bot(object):
             self.send_message(f'{algo.get_name()} Bot started.. {ip_address}')
             logger.info('Loading...')
 
+            # 봇 상태로드
+            algo.load_status()
+            # ready 구현체가 있다면 호출.
             algo.ready()
+
             if not self.backtest:
                 t = threading.Thread(target=self.start_sched,  daemon=True)
                 t.start()

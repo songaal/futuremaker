@@ -1,4 +1,6 @@
 import asyncio
+import json
+import os
 import time
 from datetime import datetime
 
@@ -19,7 +21,6 @@ class Algo(object):
         self.base = base
         self.quote = quote
         self.symbol = f'{base}{quote}'
-        self.position_quantity = 0
         self.floor_decimals = floor_decimals
 
         self.init_capital = init_capital
@@ -28,7 +29,7 @@ class Algo(object):
         self.position_quantity = 0
         self.position_entry_price = 0
         self.position_losscut_price = 0
-        self.position_entry_time = datetime.fromtimestamp(0)
+        self.position_entry_time = datetime.now()
 
         self.total_profit = 0.0
         self.total_equity = self.init_capital
@@ -37,7 +38,6 @@ class Algo(object):
         self.total_trade = 0
         self.win_trade = 0
         self.lose_trade = 0
-        self.pnl_ratio = 0
         self.max_equity = 0
         self.dd = 0
         self.mdd = 0
@@ -46,8 +46,133 @@ class Algo(object):
         self.buyDelay = 60
         self.buyBTCUnit = 1
 
+        self.STATUS_FILE = f'status-{self.get_name()}.json'
+        self.TRADE_FILE = f'trade-{self.get_name()}.json'
+        self.DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+    def ready(self):
+        """
+        봇 시작전 정보를 로드할때 사용.
+        """
+        pass
+
     def get_name(self):
         return type(self).__name__
+
+    def load_status(self):
+        """
+        봇이 시작할때 기존 포지션 정보가 없으므로, 로드하도록 한다.
+        """
+        # 파일이 없으면 먼저 하나를 만들어준다.
+        if not os.path.isfile(self.STATUS_FILE):
+            self.save_status()
+
+        with open(self.STATUS_FILE, 'r') as json_file:
+            status_data = json.load(json_file)
+            self.base = status_data['base']
+            self.quote = status_data['quote']
+            self.init_capital = status_data['init_capital']
+            self.position_quantity = status_data['position_quantity']
+            self.position_entry_price = status_data['position_entry_price']
+            self.position_losscut_price = status_data['position_losscut_price']
+            self.position_entry_time = datetime.strptime(status_data['position_entry_time'], self.DATETIME_FORMAT)
+            # 성능 계산에 필요한 누적수치들..
+            self.total_equity = status_data['total_equity']
+            self.total_profit = status_data['total_profit']
+            self.init_capital = status_data['init_capital']
+            self.max_equity = status_data['max_equity']
+            self.mdd = status_data['mdd']
+            self.total_trade = status_data['total_trade']
+            self.win_trade = status_data['win_trade']
+            self.win_profit = status_data['win_profit']
+            self.lose_trade = status_data['lose_trade']
+            self.loss_profit = status_data['loss_profit']
+
+            message = f'==== Load Status ====\n' \
+                      f'base[{self.base}] quote[{self.quote}]\n' \
+                      f'init_capital[{self.init_capital}]\n' \
+                      f'position_quantity[{self.position_quantity}]\n' \
+                      f'position_entry_price[{self.position_entry_price}]\n' \
+                      f'position_losscut_price[{self.position_losscut_price}]\n' \
+                      f'position_entry_time[{self.position_entry_time}]' \
+                      f'total_equity[{self.total_equity}]' \
+                      f'total_profit[{self.total_profit}]' \
+                      f'init_capital[{self.init_capital}]' \
+                      f'max_equity[{self.max_equity}]' \
+                      f'mdd[{self.mdd}]' \
+                      f'total_trade[{self.total_trade}]' \
+                      f'win_trade[{self.win_trade}]' \
+                      f'win_profit[{self.win_profit}]' \
+                      f'lose_trade[{self.lose_trade}]' \
+                      f'loss_profit[{self.loss_profit}]'
+
+            log.logger.info(message)
+            self.send_message(message)
+
+    def save_status(self):
+        """
+        "base": "BTC",
+        "quote": "USDT",
+        "init_capital": 10000,
+        "position_quantity": -1.34,
+        "position_entry_price": 8990.0,
+        "position_losscut_price": 8430,
+        "position_entry_time": "2020-01-20T00:00:00Z"
+        """
+        status_data = {
+            "base": self.base,
+            "quote": self.quote,
+            "init_capital": self.init_capital,
+            "position_quantity": self.position_quantity,
+            "position_entry_price": self.position_entry_price,
+            "position_losscut_price": self.position_losscut_price,
+            "position_entry_time": datetime.strftime(self.position_entry_time, self.DATETIME_FORMAT)
+            # 아래는 트레이딩 성능 계산시 필요한 누적 수치들이다.
+            "total_equity": self.total_equity,
+            "total_profit": self.total_profit,
+            "init_capital": self.init_capital,
+            "max_equity": self.max_equity,
+            "mdd": self.mdd,
+            "total_trade": self.total_trade,
+            "win_trade": self.win_trade,
+            "win_profit": self.win_profit,
+            "lose_trade": self.lose_trade,
+            "loss_profit": self.loss_profit,
+        }
+        with open(self.STATUS_FILE, 'w') as json_file:
+            json.dump(status_data, json_file, indent=4)
+
+    def append_trade(self, trade):
+        """
+        :param trade: 트레이드 객체.
+        {
+            "tradeTime": "<timestamp10>"
+            "datetime": "2020-01-12T00:00:00"
+            "symbol" : "BTC/USDT"
+            "action" : "SELL",
+            "position" : "NONE",
+            "price" : 8751.1,
+            "quantity": 1.34,python
+            "pnl": {
+                "total_equity" : 10203,
+                "total_profit" : 203,
+                "init_capital" : 10000,
+                "drawdown" : 10,
+                "mdd" : 13.2,
+                "total_trade":
+            }
+        }
+        :return:
+        """
+        trade_data = []
+        if os.path.isfile(self.TRADE_FILE):
+            with open(self.TRADE_FILE, 'r') as file:
+                trade_data = json.load(file)
+
+        with open(self.TRADE_FILE, 'w') as file:
+            trade_data.append(trade)
+            json_val = json.dumps(trade_data, indent=4)
+            file.write(f'{json_val}\n')
 
     def update_candle(self, df, candle):
         """
@@ -60,17 +185,6 @@ class Algo(object):
 
     def send_message(self, text):
         pass
-
-    def show_summary(self):
-        summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} ' \
-                  f'TOT_PROFIT:{self.total_profit:.0f} ({self.total_profit / self.init_capital * 100.0:.2f}%) ' \
-                  f'DD:{self.dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
-                  f'TOT_TRADE:{self.total_trade} ' \
-                  f'WIN%:{(self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0:2.1f}% ' \
-                  f'P/L:{self.pnl_ratio:0.1f}\n' \
-                  f'============================'
-        log.position.info(summary)
-        self.send_message(summary)
 
     def close_long(self):
         if self.position_quantity > 0:
@@ -244,22 +358,16 @@ class Algo(object):
         self.position_entry_price = price
         self.position_losscut_price = losscut_price
         self.position_entry_time = this_time
-
-    def estimated_profit(self, this_time, current_price):
-        if self.position_entry_price == 0:
-            return
-
-        estimated_profit = self.position_quantity * (
-                    (current_price - self.position_entry_price) / self.position_entry_price) * current_price
-        estimated_equity = self.total_equity + estimated_profit
-        max_equity = max(self.max_equity, estimated_equity)
-        drawdown = (max_equity - estimated_equity) * 100 / max_equity \
-            if max_equity > 0 and max_equity - estimated_equity > 0 else 0
-        if drawdown > self.mdd:
-            self.mdd = max(self.mdd, drawdown)
-            message = f'{this_time} New MDD:{drawdown:0.2f}% @{current_price} TOT_EQUITY:{estimated_equity:0.0f}'
-            log.logger.info(message)
-            self.send_message(message)
+        # 상태저장
+        self.save_status()
+        self.append_trade({
+            "tradeTime": this_time,
+            "datetime": this_time,
+            "symbol": self.symbol,
+            "position": type,
+            "price": price,
+            "quantity": self.position_quantity,
+        })
 
     def calc_close(self, this_time, exit_price, entry_price, quantity):
         # 이익 확인.
@@ -271,11 +379,12 @@ class Algo(object):
         self.send_message(message)
 
         self.total_profit += profit
+        total_profit_pct = self.total_profit / self.init_capital * 100.0,
         self.total_equity = self.init_capital + self.total_profit
         self.max_equity = max(self.max_equity, self.total_equity)
-        self.dd = (self.max_equity - self.total_equity) * 100 / self.max_equity \
+        dd = (self.max_equity - self.total_equity) * 100 / self.max_equity \
             if self.max_equity > 0 and self.max_equity - self.total_equity > 0 else 0
-        self.mdd = max(self.mdd, self.dd)
+        self.mdd = max(self.mdd, dd)
         # trade 횟수.
         self.total_trade += 1
         if profit > 0:
@@ -284,13 +393,70 @@ class Algo(object):
         else:
             self.lose_trade += 1
             self.loss_profit += -profit
+
+        win_pct = (self.win_trade / self.total_trade) * 100 if self.total_trade > 0 else 0
+
+        pnl_ratio = 0
         if self.lose_trade > 0 and self.win_trade > 0:
-            self.pnl_ratio = (self.win_profit / self.win_trade) / (self.loss_profit / self.lose_trade)
+            pnl_ratio = (self.win_profit / self.win_trade) / (self.loss_profit / self.lose_trade)
         else:
-            self.pnl_ratio = 0
+            pnl_ratio = 0
 
         # 초기화
         self.position_quantity = 0
         self.position_entry_time = this_time
+        # 상태저장
+        self.save_status()
+        self.append_trade({
+            "tradeTime": this_time,
+            "datetime": this_time,
+            "symbol": self.symbol,
+            "position": 'NONE',
+            "entry_price": entry_price,
+            "price": exit_price,
+            "quantity": quantity,
+            "pnl": {
+                "profit": profit,
+                "profit_pct": profit_pct,
+                "total_equity": self.total_equity,
+                "total_profit": self.total_profit,
+                "total_profit_pct": total_profit_pct,
+                "init_capital": self.init_capital,
+                "max_equity": self.max_equity,
+                "drawdown": dd,
+                "mdd": self.mdd,
+                "total_trade": self.total_trade,
+                "win_trade": self.win_trade,
+                "win_profit": self.win_profit,
+                "lose_trade": self.lose_trade,
+                "loss_profit": self.loss_profit,
+                "win_pct": win_pct,
+                "pnl_ratio": pnl_ratio,
+            }
+        })
         # 요약
-        self.show_summary()
+        summary = f'SUMMARY TOT_EQUITY:{self.total_equity:.0f} ' \
+                  f'TOT_PROFIT:{self.total_profit:.0f} ({total_profit_pct:.2f}%) ' \
+                  f'DD:{dd:0.1f}% MDD:{self.mdd:0.1f}% ' \
+                  f'TOT_TRADE:{self.total_trade} ' \
+                  f'WIN%:{win_pct:2.1f}% ' \
+                  f'P/L:{self.pnl_ratio:0.1f}\n' \
+                  f'============================'
+        log.position.info(summary)
+        self.send_message(summary)
+
+    def estimated_profit(self, this_time, current_price):
+        if self.position_entry_price == 0:
+            return
+
+        est_profit = self.position_quantity * (
+                (current_price - self.position_entry_price) / self.position_entry_price) * current_price
+        estimated_equity = self.total_equity + est_profit
+        max_equity = max(self.max_equity, estimated_equity)
+        drawdown = (max_equity - estimated_equity) * 100 / max_equity \
+            if max_equity > 0 and max_equity - estimated_equity > 0 else 0
+        if drawdown > self.mdd:
+            self.mdd = max(self.mdd, drawdown)
+            message = f'{this_time} New MDD:{drawdown:0.2f}% @{current_price} TOT_EQUITY:{estimated_equity:0.0f}'
+            log.logger.info(message)
+            self.send_message(message)
