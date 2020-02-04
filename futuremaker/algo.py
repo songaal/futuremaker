@@ -126,7 +126,7 @@ class Algo(object):
             "position_quantity": self.position_quantity,
             "position_entry_price": self.position_entry_price,
             "position_losscut_price": self.position_losscut_price,
-            "position_entry_time": datetime.strftime(self.position_entry_time, self.DATETIME_FORMAT)
+            "position_entry_time": datetime.strftime(self.position_entry_time, self.DATETIME_FORMAT),
             # 아래는 트레이딩 성능 계산시 필요한 누적 수치들이다.
             "total_equity": self.total_equity,
             "total_profit": self.total_profit,
