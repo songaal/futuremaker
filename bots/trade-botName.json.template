@@ -1,0 +1,21 @@
+[
+    //1. LONG 일 경우
+    {
+        "tradeTime": 1580821680.0,
+        "datetime": "2020-02-04T13:08:00.000000Z",
+        "symbol": "BTCUSDT",
+        "position": "LONG",
+        "price": 9144.0,
+        "quantity": 0.014
+    }
+
+    //2. SHORT 일 경우
+    {
+        "tradeTime": 1580821740.0,
+        "datetime": "2020-02-04T13:09:00.000000Z",
+        "symbol": "BTCUSDT",
+        "position": "SHORT",
+        "price": 9137.39,
+        "quantity": -0.014
+    }
+]
