@@ -15,6 +15,42 @@ import pandas as pd
 import numpy as np
 
 
+def kama(data, period=12, fast_period=2, slow_period=30):
+    '''
+    Formula:
+      - direction = close - close_period
+      - volatility = sumN(abs(close - close_n), period)
+      - efficientcy_ratio = abs(direction / volatility)
+      - fast = 2 / (fast_period + 1)
+      - slow = 2 / (slow_period + 1)
+      - smfactor = squared(efficienty_ratio * (fast - slow) + slow)
+      - smfactor1 = 1.0  - smfactor
+    '''
+    data['direction'] = data['close'].diff(period)
+    data['volatility'] = data.close.diff().abs().rolling(period).sum()
+    efficiency_ratio = data['direction'].abs() / data['volatility']
+    data['period'] = (efficiency_ratio * period).dropna().astype(int)
+    fast = 2.0 / (fast_period + 1.0)
+    slow = 2.0 / (slow_period + 1.0)
+    sc = (efficiency_ratio * (fast - slow) + slow) ** 2.0
+    hl2 = (data['high'] + data['low']) / 2
+    answer = np.zeros(sc.size)
+    N = len(answer)
+    first_value = True
+    # k = nz(k[1])+(sc*(hl2-nz(k[1])))
+    for i in range(N):
+        if sc[i] != sc[i]:
+            answer[i] = np.nan
+        else:
+            if first_value:
+                answer[i] = data['close'][i]
+                first_value = False
+            else:
+                # answer[i] = answer[i - 1] + sc[i] * (price[i] - answer[i - 1])
+                answer[i] = answer[i - 1] + sc[i] * (hl2[i] - answer[i - 1])
+    data['kama'] = answer
+
+
 def compare_in_a_row(list, comp=lambda x: x < 0):
     for x in list:
         if comp(x):
