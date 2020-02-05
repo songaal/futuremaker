@@ -1,7 +1,9 @@
 import asyncio
 import json
 import os
+import sys
 import time
+import traceback
 from datetime import datetime
 from json import JSONDecodeError
 
@@ -185,6 +187,17 @@ class Algo(object):
             trade_data.append(trade)
             json_val = json.dumps(trade_data, indent=4)
             file.write(f'{json_val}\n')
+
+    def _update_candle(self, df, candle):
+        try:
+            self.update_candle(df, candle)
+        except Exception as e:
+            try:
+                exc_info = sys.exc_info()
+            finally:
+                self.send_message(e)
+                traceback.print_exception(*exc_info)
+                del exc_info
 
     def update_candle(self, df, candle):
         """

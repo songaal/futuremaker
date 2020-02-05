@@ -49,6 +49,7 @@ def kama(data, period=12, fast_period=2, slow_period=30):
                 # answer[i] = answer[i - 1] + sc[i] * (price[i] - answer[i - 1])
                 answer[i] = answer[i - 1] + sc[i] * (hl2[i] - answer[i - 1])
     data['kama'] = answer
+    return data.iloc[-1]
 
 
 def compare_in_a_row(list, comp=lambda x: x < 0):

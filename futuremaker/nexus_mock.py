@@ -1,3 +1,5 @@
+import sys
+import traceback
 from datetime import datetime
 
 import pandas as pd
@@ -35,9 +37,16 @@ class Nexus(object):
             if self.test_end is not None and candle_df.index[-1] > self.test_end:
                 # skip
                 return 0
-
-            self.cb_update_candle(candle_df, candle_df.iloc[-1])
-            return candle_df
+            try:
+                self.cb_update_candle(candle_df, candle_df.iloc[-1])
+                return candle_df
+            except Exception as e:
+                try:
+                    exc_info = sys.exc_info()
+                finally:
+                    self.send_message(e)
+                    traceback.print_exception(*exc_info)
+                    del exc_info
 
     async def start(self):
         if not self.candle_handler:

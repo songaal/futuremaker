@@ -71,7 +71,7 @@ class Bot(object):
             print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
 
     async def run(self, algo):
-        self.nexus.callback(update_candle=algo.update_candle)
+        self.nexus.callback(update_candle=algo._update_candle)
 
         algo.api = self.api
         algo.send_message = self.send_message

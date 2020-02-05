@@ -24,38 +24,30 @@ class AlertGo(Algo):
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle):
-        try:
-            time = candle.name
-            self.estimated_profit(time, candle.close)
+        time = candle.name
+        self.estimated_profit(time, candle.close)
 
-            # 첫진입.
-            if self.position_quantity == 0:
+        # 첫진입.
+        if self.position_quantity == 0:
+            log.logger.info(f'--> Enter Long <-- {time}')
+            self.open_long()
+            self.calc_open(Type.LONG, time, candle.close, 0)
+        else:
+            # 롱 진입
+            if self.position_quantity < 0:
                 log.logger.info(f'--> Enter Long <-- {time}')
+                quantity = self.close_short()
+                self.calc_close(time, candle.close, self.position_entry_price, quantity)
                 self.open_long()
                 self.calc_open(Type.LONG, time, candle.close, 0)
-            else:
-                # 롱 진입
-                if self.position_quantity < 0:
-                    log.logger.info(f'--> Enter Long <-- {time}')
-                    quantity = self.close_short()
-                    self.calc_close(time, candle.close, self.position_entry_price, quantity)
-                    self.open_long()
-                    self.calc_open(Type.LONG, time, candle.close, 0)
 
-                # 숏 진입
-                elif self.position_quantity > 0:
-                    log.logger.info(f'--> Enter Short <-- {time}')
-                    quantity = self.close_long()
-                    self.calc_close(time, candle.close, self.position_entry_price, quantity)
-                    self.open_short()
-                    self.calc_open(Type.SHORT, time, candle.close, 0)
-        except Exception as e:
-            try:
-                exc_info = sys.exc_info()
-            finally:
-                self.send_message(e)
-                traceback.print_exception(*exc_info)
-                del exc_info
+            # 숏 진입
+            elif self.position_quantity > 0:
+                log.logger.info(f'--> Enter Short <-- {time}')
+                quantity = self.close_long()
+                self.calc_close(time, candle.close, self.position_entry_price, quantity)
+                self.open_short()
+                self.calc_open(Type.SHORT, time, candle.close, 0)
 
 
 if __name__ == '__main__':
@@ -78,8 +70,8 @@ if __name__ == '__main__':
 
     algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=1000000)
 
-    # asyncio.run(test_bot.run(algo))
-    asyncio.run(real_bot.run(algo))
+    asyncio.run(test_bot.run(algo))
+    # asyncio.run(real_bot.run(algo))
 
 
 
