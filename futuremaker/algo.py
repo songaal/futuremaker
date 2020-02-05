@@ -185,7 +185,6 @@ class Algo(object):
             trade_data.append(trade)
             json_val = json.dumps(trade_data, indent=4)
             file.write(f'{json_val}\n')
-            print(json_val)
 
     def update_candle(self, df, candle):
         """

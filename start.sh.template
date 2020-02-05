@@ -1,8 +1,7 @@
 #!/bin/bash
 
-export API_KEY="API_KEY"
-export API_SECRET="API_SECRET"
-export TESTNET=True
+export key="API_KEY"
+export secret="API_SECRET"
 export LOGLEVEL=INFO
 
 export APP_HOME=$(dirname "$0")
