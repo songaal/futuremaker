@@ -1,15 +1,11 @@
 import asyncio
-import signal
 import sys
-import time
-import traceback
-from datetime import datetime
 
+from futuremaker import log
 from futuremaker import utils, indicators
+from futuremaker.algo import Algo
 from futuremaker.binance_api import BinanceAPI
 from futuremaker.bot import Bot
-from futuremaker.algo import Algo
-from futuremaker import log
 from futuremaker.position_type import Type
 
 
@@ -25,7 +21,7 @@ class KamaEntry(Algo):
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle):
 
-        candle = indicators.kama(df, period=4)
+        candle = indicators.kama(df, period=5)
         # print(candle['kama'], candle['direction'])
         time = candle.name
         self.estimated_profit(time, candle.close)
@@ -83,8 +79,9 @@ if __name__ == '__main__':
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-                   # test_data='../candle_data/BINANCE_BNBUSDT, 240.csv'
-                    test_data='../candle_data/BINANCE_BTCUSDT, 240.csv'
+                   test_data='../candle_data/BINANCE_BNBUSDT, 240.csv'
+                   # test_data='../candle_data/BINANCE_BTCUSDT, 240.csv'
+                   # test_data='../candle_data/BINANCE_ETHUSDT, 240.csv'
                    # test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
                    # test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
                    # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv'
@@ -103,14 +100,21 @@ if __name__ == '__main__':
     # asyncio.run(real_bot.run(algo))
 
 """
-# BINANCE_BTCUSDT, 60.csv, period=12
-SUMMARY TOT_EQUITY:21220 TOT_PROFIT:11220 (112.20%) DD:18.7% MDD:31.7% TOT_TRADE:864 WIN%:50.1% P/L:1.2
+# BINANCE_BTCUSDT, 240.csv, 
+# 2018, period=4
+SUMMARY TOT_EQUITY:22300 TOT_PROFIT:12300 (123.00%) DD:2.6% MDD:20.3% TOT_TRADE:295 WIN%:39.7% P/L:2.0
+# 2019, 4
+SUMMARY TOT_EQUITY:29418 TOT_PROFIT:19418 (194.18%) DD:7.5% MDD:26.1% TOT_TRADE:306 WIN%:34.6% P/L:2.8
+# 2019, 5 
+SUMMARY TOT_EQUITY:22913 TOT_PROFIT:12913 (129.13%) DD:14.0% MDD:18.9% TOT_TRADE:270 WIN%:34.8% P/L:2.6
 
 # BINANCE_BNBUSDT, 240.csv, 
 # 2019, period=4
 SUMMARY TOT_EQUITY:20796 TOT_PROFIT:10796 (107.96%) DD:17.5% MDD:36.2% TOT_TRADE:296 WIN%:38.2% P/L:1.9
 # 2018, period=4
 SUMMARY TOT_EQUITY:303643 TOT_PROFIT:293643 (2936.43%) DD:3.6% MDD:19.6% TOT_TRADE:278 WIN%:39.9% P/L:2.6
+# 2018, 5
+SUMMARY TOT_EQUITY:184516 TOT_PROFIT:174516 (1745.16%) DD:5.7% MDD:32.9% TOT_TRADE:265 WIN%:41.1% P/L:2.3
 """
 
 
