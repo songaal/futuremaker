@@ -25,7 +25,7 @@ class KamaEntry(Algo):
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle):
 
-        candle = indicators.kama(df)
+        candle = indicators.kama(df, period=4)
         # print(candle['kama'], candle['direction'])
         time = candle.name
         self.estimated_profit(time, candle.close)
@@ -44,12 +44,12 @@ class KamaEntry(Algo):
         buy_exit = kamaEntry[-1] < kamaEntry[-2] or (roc[-2] > 0 and roc[-1] < 0)
         sell_exit = kamaEntry[-1] > kamaEntry[-2] or (roc[-2] < 0 and roc[-1] > 0)
 
-        if buy_entry:
+        if buy_entry and not buy_exit:
             # buy_entry
             if self.position_quantity < 0:
                 log.logger.info(f'--> Close Short <-- {time}')
                 quantity = self.close_short()
-                self.calc_close(time, candle.close, self.position_entry_price, quantity)
+                self.calc_close(time, candle.close, self.position_entry_price, -quantity)
             if self.position_quantity == 0:
                 log.logger.info(f'--> Enter Long <-- {time}')
                 self.open_long()
@@ -60,7 +60,7 @@ class KamaEntry(Algo):
             quantity = self.close_long()
             self.calc_close(time, candle.close, self.position_entry_price, quantity)
 
-        if sell_entry:
+        if sell_entry and not sell_exit:
             # sell_entry
             if self.position_quantity > 0:
                 log.logger.info(f'--> Close Long <-- {time}')
@@ -74,16 +74,17 @@ class KamaEntry(Algo):
             # close sell
             log.logger.info(f'--> Exit Short <-- {time}')
             quantity = self.close_short()
-            self.calc_close(time, candle.close, self.position_entry_price, quantity)
+            self.calc_close(time, candle.close, self.position_entry_price, -quantity)
 
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    year = 2019
+    year = 2018
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-                   test_data='../candle_data/BINANCE_BNBUSDT, 240.csv'
+                   # test_data='../candle_data/BINANCE_BNBUSDT, 240.csv'
+                    test_data='../candle_data/BINANCE_BTCUSDT, 240.csv'
                    # test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
                    # test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
                    # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv'
@@ -102,11 +103,14 @@ if __name__ == '__main__':
     # asyncio.run(real_bot.run(algo))
 
 """
-# BINANCE_BTCUSDT, 60.csv
+# BINANCE_BTCUSDT, 60.csv, period=12
 SUMMARY TOT_EQUITY:21220 TOT_PROFIT:11220 (112.20%) DD:18.7% MDD:31.7% TOT_TRADE:864 WIN%:50.1% P/L:1.2
 
-# 
-
+# BINANCE_BNBUSDT, 240.csv, 
+# 2019, period=4
+SUMMARY TOT_EQUITY:20796 TOT_PROFIT:10796 (107.96%) DD:17.5% MDD:36.2% TOT_TRADE:296 WIN%:38.2% P/L:1.9
+# 2018, period=4
+SUMMARY TOT_EQUITY:303643 TOT_PROFIT:293643 (2936.43%) DD:3.6% MDD:19.6% TOT_TRADE:278 WIN%:39.9% P/L:2.6
 """
 
 
