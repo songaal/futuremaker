@@ -83,11 +83,12 @@ class KamaEntry(Algo):
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    year = 2019
+    year = 2020
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-                   test_data='../candle_data/BINANCE_BNBUSDT, 240.csv'
+                   # test_data='../candle_data/BINANCE_BNBUSDT, 240.csv',
+                    test_data='../candle_data/BITFINEX_BTCUSD, 240.csv',
                    # test_data='../candle_data/BINANCE_BTCUSDT, 240.csv'
                    # test_data='../candle_data/BINANCE_ETHUSDT, 240.csv'
                    # test_data='../candle_data/BINANCE_BTCUSDT, 60.csv'
@@ -106,6 +107,34 @@ if __name__ == '__main__':
 
     asyncio.run(test_bot.run(algo))
     # asyncio.run(real_bot.run(algo))
+
+"""
+# 수수료 0.1 포함. BINANCE_BTCUSDT 4h
+# roc 2020 BINANCE
+TOT_EQUITY:11195 TOT_PROFIT:1195 (11.95%) DD:4.9% MDD:10.5% TOT_TRADE:40 WIN%:32.5% P/L:3.0
+# roc 2020 BITFINEX
+TOT_EQUITY:10693 TOT_PROFIT:693 (6.93%) DD:3.3% MDD:10.0% TOT_TRADE:39 WIN%:30.8% P/L:2.8
+# roc 2019 BINANCE
+TOT_EQUITY:52868 TOT_PROFIT:42868 (428.68%) DD:0.5% MDD:15.3% TOT_TRADE:412 WIN%:36.7% P/L:2.8
+# roc 2019 BITFINEX
+TOT_EQUITY:41254 TOT_PROFIT:31254 (312.54%) DD:2.1% MDD:16.2% TOT_TRADE:403 WIN%:35.5% P/L:2.7
+# roc 2018 BINANCE
+TOT_EQUITY:34727 TOT_PROFIT:24727 (247.27%) DD:18.0% MDD:31.2% TOT_TRADE:365 WIN%:41.6% P/L:1.9
+# roc 2018 BITFINEX
+TOT_EQUITY:29810 TOT_PROFIT:19810 (198.10%) DD:18.3% MDD:30.5% TOT_TRADE:371 WIN%:39.6% P/L:1.9
+# roc 2017 BITFINEX
+TOT_EQUITY:177185 TOT_PROFIT:167185 (1671.85%) DD:0.1% MDD:21.4% TOT_TRADE:333 WIN%:46.5% P/L:2.3
+# roc 2016 BITFINEX
+TOT_EQUITY:40155 TOT_PROFIT:30155 (301.55%) DD:4.8% MDD:14.4% TOT_TRADE:384 WIN%:42.7% P/L:2.6
+# roc 2015 BITFINEX
+TOT_EQUITY:42478 TOT_PROFIT:32478 (324.78%) DD:4.2% MDD:16.6% TOT_TRADE:338 WIN%:37.0% P/L:3.5
+
+
+---------------
+# kama 2019 
+TOT_EQUITY:22897 TOT_PROFIT:12897 (128.97%) DD:14.0% MDD:18.9% TOT_TRADE:270 WIN%:34.8% P/L:2.6
+"""
+
 
 """
 # BINANCE_BTCUSDT, 240.csv, 

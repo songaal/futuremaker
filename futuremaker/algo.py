@@ -25,6 +25,7 @@ class Algo(object):
         self.quote = quote
         self.symbol = f'{base}{quote}'
         self.floor_decimals = floor_decimals
+        self.commission_rate = 0.1
 
         self.init_capital = init_capital
         self.max_budget = max_budget
@@ -397,6 +398,8 @@ class Algo(object):
     def calc_close(self, this_time, exit_price, entry_price, quantity):
         # 이익 확인.
         profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
+        commission = self.commission_rate/100 * profit
+        profit -= commission
         profit_pct = abs(profit / quantity / entry_price * 100)
         profit_pct = profit_pct if profit > 0 else -profit_pct
         message = f'{this_time} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f} ({profit_pct:0.2f}%)'

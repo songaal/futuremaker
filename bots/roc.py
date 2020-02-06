@@ -69,7 +69,7 @@ class RocEntry(Algo):
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    year = 2019
+    year = 2018
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
