@@ -15,7 +15,7 @@ from futuremaker.position_type import Type
 
 class Algo(object):
     def __init__(self, base, quote, floor_decimals,
-                 init_capital,
+                 init_capital, commission_rate,
                  #  트레이딩 최대예산. 이 수치를 넘어서 사지 않는다. 단위는 quote기준.
                  max_budget
                  ):
@@ -25,7 +25,7 @@ class Algo(object):
         self.quote = quote
         self.symbol = f'{base}{quote}'
         self.floor_decimals = floor_decimals
-        self.commission_rate = 0.1
+        self.commission_rate = commission_rate
 
         self.init_capital = init_capital
         self.max_budget = max_budget
@@ -33,7 +33,7 @@ class Algo(object):
         self.position_quantity = 0
         self.position_entry_price = 0
         self.position_losscut_price = 0
-        self.position_entry_time = datetime.now()
+        self.position_entry_time = datetime.fromtimestamp(0) if self.backtest else datetime.now()
 
         self.total_profit = 0.0
         self.total_equity = self.init_capital
@@ -191,6 +191,7 @@ class Algo(object):
 
     def _update_candle(self, df, candle):
         try:
+            self.estimated_profit(candle.name, candle.close)
             self.update_candle(df, candle)
         except Exception as e:
             try:
@@ -398,7 +399,7 @@ class Algo(object):
     def calc_close(self, this_time, exit_price, entry_price, quantity):
         # 이익 확인.
         profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
-        commission = self.commission_rate/100 * profit
+        commission = self.commission_rate / 100 * 2 * abs(profit)  # 사고 파는 수수료라 2를 곱한다.
         profit -= commission
         profit_pct = abs(profit / quantity / entry_price * 100)
         profit_pct = profit_pct if profit > 0 else -profit_pct
