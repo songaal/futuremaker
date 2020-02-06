@@ -15,6 +15,10 @@ import pandas as pd
 import numpy as np
 
 
+def roc(data, period=5):
+    data['roc'] = data['close'].diff(period) / data['close'].shift(period) * 100.0
+    return data.iloc[-1]
+
 def kama(data, period=12, fast_period=2, slow_period=30):
     '''
     Formula:
@@ -26,14 +30,15 @@ def kama(data, period=12, fast_period=2, slow_period=30):
       - smfactor = squared(efficienty_ratio * (fast - slow) + slow)
       - smfactor1 = 1.0  - smfactor
     '''
-    data['direction'] = data['close'].diff(period)
+
+    data['roc'] = data['close'].diff(period) / data['close'].shift(period) * 100.0
     data['volatility'] = data.close.diff().abs().rolling(period).sum()
-    efficiency_ratio = data['direction'].abs() / data['volatility']
+    efficiency_ratio = data['close'].diff(period).abs() / data['volatility']
     data['period'] = (efficiency_ratio * period).dropna().astype(int)
     fast = 2.0 / (fast_period + 1.0)
     slow = 2.0 / (slow_period + 1.0)
     sc = (efficiency_ratio * (fast - slow) + slow) ** 2.0
-    hl2 = (data['high'] + data['low']) / 2
+    hl2 = (data['high'] + data['low']) / 2.0
     answer = np.zeros(sc.size)
     N = len(answer)
     first_value = True
@@ -46,7 +51,6 @@ def kama(data, period=12, fast_period=2, slow_period=30):
                 answer[i] = data['close'][i]
                 first_value = False
             else:
-                # answer[i] = answer[i - 1] + sc[i] * (price[i] - answer[i - 1])
                 answer[i] = answer[i - 1] + sc[i] * (hl2[i] - answer[i - 1])
     data['kama'] = answer
     return data.iloc[-1]
