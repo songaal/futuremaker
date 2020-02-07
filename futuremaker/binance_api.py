@@ -22,10 +22,22 @@ class BinanceAPI:
             interval = Client.KLINE_INTERVAL_1MINUTE
         elif timeframe == '5m':
             interval = Client.KLINE_INTERVAL_5MINUTE
+        elif timeframe == '10m':
+            interval = Client.KLINE_INTERVAL_10MINUTE
+        elif timeframe == '15m':
+            interval = Client.KLINE_INTERVAL_15MINUTE
+        elif timeframe == '30m':
+            interval = Client.KLINE_INTERVAL_30MINUTE
         elif timeframe == '1h':
             interval = Client.KLINE_INTERVAL_1HOUR
+        elif timeframe == '2h':
+            interval = Client.KLINE_INTERVAL_2HOUR
+        elif timeframe == '4h':
+            interval = Client.KLINE_INTERVAL_4HOUR
         elif timeframe == '1d':
             interval = Client.KLINE_INTERVAL_1DAY
+        elif timeframe == '1w':
+            interval = Client.KLINE_INTERVAL_1WEEK
         return interval
 
     def bulk_klines(self, symbol, timeframe, since=None):
