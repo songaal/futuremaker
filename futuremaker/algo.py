@@ -17,9 +17,11 @@ class Algo(object):
     def __init__(self, base, quote, floor_decimals,
                  init_capital, commission_rate,
                  #  트레이딩 최대예산. 이 수치를 넘어서 사지 않는다. 단위는 quote기준.
-                 max_budget
+                 max_budget,
+                 paper,
                  ):
         self.backtest = True  # 시작전 Bot으로부터 설정된다.
+        self.paper = paper  # 페이퍼 트레이딩 모드로 실제 주문하지 않는다.
         self.api: BinanceAPI = None
         self.base = base
         self.quote = quote
@@ -215,7 +217,7 @@ class Algo(object):
 
     def close_long(self):
         if self.position_quantity > 0:
-            if self.backtest:
+            if self.backtest or self.paper:
                 quantity = self.position_quantity
                 self.position_quantity = 0
                 return quantity
@@ -237,7 +239,7 @@ class Algo(object):
     def close_short(self):
 
         if self.position_quantity < 0:
-            if self.backtest:
+            if self.backtest or self.paper:
                 quantity = -self.position_quantity
                 self.position_quantity = 0
                 return quantity
@@ -280,7 +282,7 @@ class Algo(object):
         self.send_message(f'Loan! {asset} {amount}')
 
     def open_long(self):
-        if self.backtest:
+        if self.backtest or self.paper:
             return
 
         log.order.info('========= GO LONG ==========')
@@ -315,7 +317,7 @@ class Algo(object):
         self.wallet_summary()
 
     def open_short(self):
-        if self.backtest:
+        if self.backtest or self.paper:
             return
 
         log.order.info('========= GO SHORT ==========')
@@ -349,7 +351,7 @@ class Algo(object):
         self.wallet_summary()
 
     def wallet_summary(self):
-        if self.backtest:
+        if self.backtest or self.paper:
             return
 
         time.sleep(1)
@@ -370,7 +372,7 @@ class Algo(object):
         log.logger.info(desc)
 
     def calc_open(self, type, this_time, price, losscut_price):
-        if self.backtest:
+        if self.backtest or self.paper:
             # 백테스트는 open_short, open_long을 실행하지 않으므로, self.position_quantity 룰 여기서 계산해준다.
             total_value = utils.floor(self.total_equity / price, self.floor_decimals)
             max_amount = utils.floor(self.max_budget / price, self.floor_decimals)

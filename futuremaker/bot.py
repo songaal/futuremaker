@@ -1,19 +1,16 @@
 import asyncio
-import concurrent
-import json
 import os
 import threading
 import time
+from collections import deque
 from datetime import datetime
 
 import requests
-from aiohttp import web
-from collections import deque
 
-from futuremaker import utils
-from futuremaker.nexus import Nexus
 from futuremaker import nexus_mock
+from futuremaker import utils
 from futuremaker.log import logger
+from futuremaker.nexus import Nexus
 
 
 class Bot(object):
@@ -22,8 +19,7 @@ class Bot(object):
     """
 
     def __init__(self, api, symbol, candle_limit=20, candle_period='1h',
-                 backtest=True, test_start=None, test_end=None, test_data=None,
-                 telegram_bot_token=None, telegram_chat_id=None):
+                 backtest=True, paper=True, test_start=None, test_end=None, test_data=None):
 
         if not symbol:
             raise Exception('Symbol must be set.')
@@ -35,8 +31,9 @@ class Bot(object):
         self.symbol = symbol
         self.candle_period = candle_period
         self.backtest = backtest
-        self.telegram_bot_token = telegram_bot_token
-        self.telegram_chat_id = telegram_chat_id
+        self.paper = paper
+        self.telegram_bot_token = os.getenv('bot_token')
+        self.telegram_chat_id = os.getenv('chat_id')
 
         if not self.backtest:
             self.nexus = Nexus(api, symbol, candle_limit=candle_limit, candle_period=candle_period)
@@ -68,7 +65,7 @@ class Bot(object):
         if self.telegram_bot_token and self.telegram_chat_id:
             return await utils.send_telegram(self.telegram_bot_token, self.telegram_chat_id, text)
         else:
-            print('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
+            logger.warn('BotToken 과 ChatId 가 설정되어 있지 않아 텔레그램 메시지를 보내지 않습니다.')
 
     async def run(self, algo):
         self.nexus.callback(update_candle=algo._update_candle)

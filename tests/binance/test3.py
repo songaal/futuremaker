@@ -1,8 +1,8 @@
 import time
 
-from bots.test import AlertGo
+from bots.macross import MaCrossGo
 
-algo = AlertGo(base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=1000000)
+algo = MaCrossGo(base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=1000000)
 algo.load_status()
 time.sleep(0.3)
 algo.save_status()
