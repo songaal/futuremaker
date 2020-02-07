@@ -10,4 +10,4 @@ build
 *.swp
 venv/
 *.json
-runbot/
+bin/
