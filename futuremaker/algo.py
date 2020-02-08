@@ -312,6 +312,10 @@ class Algo(object):
         togo = quantity
         while togo > 0:
             tobuy = min(self.buyBTCUnit, togo)
+            # TODO 나눠서....
+
+
+
             ret = self.api.create_buy_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity += tobuy

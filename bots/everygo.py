@@ -23,13 +23,13 @@ class EveryGo(Algo):
 
         # 첫진입.
         if self.position_quantity == 0:
-            log.logger.info(f'--> Enter Long <-- {self.lt(time)}')
+            log.logger.info(f'--> Enter Long <-- {localtime}')
             self.open_long()
             self.calc_open(Type.LONG, time, candle.close, 0)
         else:
             # 롱 진입
             if self.position_quantity < 0:
-                log.logger.info(f'--> Enter Long <-- {time}')
+                log.logger.info(f'--> Enter Long <-- {localtime}')
                 quantity = self.close_short()
                 self.calc_close(time, candle.close, self.position_entry_price, quantity)
                 self.open_long()
@@ -37,7 +37,7 @@ class EveryGo(Algo):
 
             # 숏 진입
             elif self.position_quantity > 0:
-                log.logger.info(f'--> Enter Short <-- {time}')
+                log.logger.info(f'--> Enter Short <-- {localtime}')
                 quantity = self.close_long()
                 self.calc_close(time, candle.close, self.position_entry_price, quantity)
                 self.open_short()

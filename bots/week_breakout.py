@@ -23,49 +23,50 @@ class WeekBreakout(Algo):
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
     def update_candle(self, df, candle, localtime):
+        this_time = candle.name
         candle = self.weekIndicator.update(df, candle)
 
         # 1. candle 이 long_break 를 뚫으면 롱 포지션을 취한다.
         if candle.open < candle.long_break < candle.close:
             # 하루이상 지나야 매매한다.
-            if (localtime - self.position_entry_time).days >= 1:
+            if (this_time - self.position_entry_time).days >= 1:
                 if self.position_quantity < 0:
                     # 먼저 숏 포지션을 CLOSE 한다.
                     quantity = self.close_short()
-                    self.calc_close(localtime, candle.close, self.position_entry_price, -quantity)
+                    self.calc_close(this_time, candle.close, self.position_entry_price, -quantity)
                 # 롱 진입
                 if self.position_quantity == 0:
                     self.open_long()
-                    self.calc_open(Type.LONG, localtime, candle.close, candle.long_break)
+                    self.calc_open(Type.LONG, this_time, candle.close, candle.long_break)
 
         # 2. candle 이 short_break 를 뚫으면 숏 포지션을 취한다.
         if candle.close < candle.short_break < candle.open:
-            if (localtime - self.position_entry_time).days >= 1:
+            if (this_time - self.position_entry_time).days >= 1:
                 # short 수행.
                 if self.position_quantity > 0:
                     quantity = self.close_long()
-                    self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
+                    self.calc_close(this_time, candle.close, self.position_entry_price, quantity)
                     # 먼저 롱 포지션을 CLOSE 한다.
                 # 숏 진입
                 if self.position_quantity == 0:
                     self.open_short()
-                    self.calc_open(Type.SHORT, localtime, candle.close, candle.short_break)
+                    self.calc_open(Type.SHORT, this_time, candle.close, candle.short_break)
 
         # 3. 롱 포지션 손절.
         if self.position_quantity > 0:
             if candle.close < min(candle.long_break,
                                   self.position_losscut_price) < candle.open:  # 롱 라인을 뚫고 내려올때. min을 사용하여 좀더 여유확보.
-                if (localtime - self.position_entry_time).days >= 1:
+                if (this_time - self.position_entry_time).days >= 1:
                     quantity = self.close_long()
-                    self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
+                    self.calc_close(this_time, candle.close, self.position_entry_price, quantity)
 
         # 4. 숏 포지션 손절.
         if self.position_quantity < 0:
             if candle.close > min(candle.short_break,
                                   self.position_losscut_price) > candle.open:  # 숏 라인을 뚫고 올라올때. min을 사용하여 빠른 손절.
-                if (localtime - self.position_entry_time).days >= 1:
+                if (this_time - self.position_entry_time).days >= 1:
                     quantity = self.close_short()
-                    self.calc_close(localtime, candle.close, self.position_entry_price, -quantity)
+                    self.calc_close(this_time, candle.close, self.position_entry_price, -quantity)
 
 
 if __name__ == '__main__':

@@ -31,7 +31,6 @@ class TelegramGo(Algo):
         # 일반 메시지
         self.send_message("TelegramGo를 시작하였습니다.")
 
-
     def update_candle(self, df, candle, localtime):
         logger.info('update_candle %s > %s : %s', df.index[-1], df.iloc[-1], candle)
         price = df.Close[-1]

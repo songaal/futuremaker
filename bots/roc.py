@@ -36,34 +36,34 @@ class RocEntry(Algo):
         if buy_entry:
             # buy_entry
             if self.position_quantity < 0:
-                log.logger.info(f'--> Close Short <-- {time}')
+                log.logger.info(f'--> Close Short <-- {localtime}')
                 quantity = self.close_short()
                 self.calc_close(time, candle.close, self.position_entry_price, -quantity)
             if self.position_quantity == 0:
-                log.logger.info(f'--> Enter Long <-- {time}')
+                log.logger.info(f'--> Enter Long <-- {localtime}')
                 self.open_long()
                 # print(explain)
                 self.calc_open(Type.LONG, time, candle.close, 0)
         elif buy_exit and self.position_quantity > 0:
             # close long
-            log.logger.info(f'--> Exit Long <-- {time}')
+            log.logger.info(f'--> Exit Long <-- {localtime}')
             quantity = self.close_long()
             self.calc_close(time, candle.close, self.position_entry_price, quantity)
 
         if sell_entry:
             # sell_entry
             if self.position_quantity > 0:
-                log.logger.info(f'--> Close Long <-- {time}')
+                log.logger.info(f'--> Close Long <-- {localtime}')
                 quantity = self.close_long()
                 self.calc_close(time, candle.close, self.position_entry_price, quantity)
             if self.position_quantity == 0:
-                log.logger.info(f'--> Enter Short <-- {time}')
+                log.logger.info(f'--> Enter Short <-- {localtime}')
                 self.open_short()
                 # print(explain)
                 self.calc_open(Type.SHORT, time, candle.close, 0)
         elif sell_exit and self.position_quantity < 0:
             # close sell
-            log.logger.info(f'--> Exit Short <-- {time}')
+            log.logger.info(f'--> Exit Short <-- {localtime}')
             quantity = self.close_short()
             self.calc_close(time, candle.close, self.position_entry_price, -quantity)
 
