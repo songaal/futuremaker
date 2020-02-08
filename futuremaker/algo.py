@@ -289,6 +289,7 @@ class Algo(object):
             ret, detail = self.api.get_loan(asset, txId)
         except:
             # 재시도.
+            time.sleep(1)
             ret, detail = self.api.get_loan(asset, txId)
 
         if ret != 0:
