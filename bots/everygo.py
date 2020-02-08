@@ -21,29 +21,27 @@ class EveryGo(Algo):
         self.wallet_summary()
 
     def update_candle(self, df, candle, localtime):
-        time = candle.name
-
         # 첫진입.
         if self.position_quantity == 0:
             log.logger.info(f'--> Enter Long <-- {localtime}')
             self.open_long()
-            self.calc_open(Type.LONG, time, candle.close, 0)
+            self.calc_open(Type.LONG, localtime, candle.close, 0)
         else:
             # 롱 진입
             if self.position_quantity < 0:
                 log.logger.info(f'--> Enter Long <-- {localtime}')
                 quantity = self.close_short()
-                self.calc_close(time, candle.close, self.position_entry_price, quantity)
+                self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
                 self.open_long()
-                self.calc_open(Type.LONG, time, candle.close, 0)
+                self.calc_open(Type.LONG, localtime, candle.close, 0)
 
             # 숏 진입
             elif self.position_quantity > 0:
                 log.logger.info(f'--> Enter Short <-- {localtime}')
                 quantity = self.close_long()
-                self.calc_close(time, candle.close, self.position_entry_price, quantity)
+                self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
                 self.open_short()
-                self.calc_open(Type.SHORT, time, candle.close, 0)
+                self.calc_open(Type.SHORT, localtime, candle.close, 0)
 
 
 if __name__ == '__main__':

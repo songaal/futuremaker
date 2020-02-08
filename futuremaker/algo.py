@@ -388,7 +388,7 @@ class Algo(object):
         self.send_message(desc)
         log.logger.info(desc)
 
-    def calc_open(self, type, this_time, price, losscut_price):
+    def calc_open(self, type, localtime, price, losscut_price):
         if self.backtest or self.paper:
             # 백테스트는 open_short, open_long을 실행하지 않으므로, self.position_quantity 룰 여기서 계산해준다.
             total_value = utils.floor(self.total_equity / price, self.floor_decimals)
@@ -396,33 +396,33 @@ class Algo(object):
             quantity = min(max_amount, total_value)
             self.position_quantity = -quantity if type == Type.SHORT else quantity
 
-        message = f'{this_time} OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
+        message = f'{localtime} OPEN {type} {self.symbol} {self.position_quantity}@{price}\n' \
                   f'============================'
         log.position.info(message)
         self.send_message(message)
 
         self.position_entry_price = price
         self.position_losscut_price = losscut_price
-        self.position_entry_time = this_time
+        self.position_entry_time = localtime
         # 상태저장
         self.save_status()
         self.append_trade({
-            "tradeTime": this_time.timestamp(),
-            "datetime": this_time.strftime(self.DATETIME_FORMAT),
+            "tradeTime": localtime.timestamp(),
+            "datetime": localtime.strftime(self.DATETIME_FORMAT),
             "symbol": self.symbol,
             "position": type,
             "price": price,
             "quantity": self.position_quantity,
         })
 
-    def calc_close(self, this_time, exit_price, entry_price, quantity):
+    def calc_close(self, localtime, exit_price, entry_price, quantity):
         # 이익 확인.
         profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
         commission = self.commission_rate / 100 * 2 * abs(profit)  # 사고 파는 수수료라 2를 곱한다.
         profit -= commission
         profit_pct = abs(profit / quantity / entry_price * 100)
         profit_pct = profit_pct if profit > 0 else -profit_pct
-        message = f'{this_time} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f} ({profit_pct:0.2f}%)'
+        message = f'{localtime} CLOSE {quantity}@{exit_price} PROFIT: {profit:.0f} ({profit_pct:0.2f}%)'
         log.position.info(message)
         self.send_message(message)
 
@@ -452,12 +452,12 @@ class Algo(object):
 
         # 초기화
         self.position_quantity = 0
-        self.position_entry_time = this_time
+        self.position_entry_time = localtime
         # 상태저장
         self.save_status()
         self.append_trade({
-            "tradeTime": this_time.timestamp(),
-            "datetime": this_time.strftime(self.DATETIME_FORMAT),
+            "tradeTime": localtime.timestamp(),
+            "datetime": localtime.strftime(self.DATETIME_FORMAT),
             "symbol": self.symbol,
             "position": 'NONE',
             "entry_price": entry_price,
@@ -493,7 +493,7 @@ class Algo(object):
         log.position.info(summary)
         self.send_message(summary)
 
-    def estimated_profit(self, this_time, current_price):
+    def estimated_profit(self, localtime, current_price):
         if self.position_entry_price == 0:
             return
 
@@ -505,6 +505,6 @@ class Algo(object):
             if max_equity > 0 and max_equity - estimated_equity > 0 else 0
         if drawdown > self.mdd:
             self.mdd = max(self.mdd, drawdown)
-            message = f'{this_time} New MDD:{drawdown:0.2f}% @{current_price} TOT_EQUITY:{estimated_equity:0.0f}'
+            message = f'{localtime} New MDD:{drawdown:0.2f}% @{current_price} TOT_EQUITY:{estimated_equity:0.0f}'
             log.logger.info(message)
             self.send_message(message)

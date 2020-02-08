@@ -20,53 +20,51 @@ class RocEntry(Algo):
     def ready(self):
         self.wallet_summary()
 
-    # 1. 손절하도록. 손절하면 1일후에 집입토록.
-    # 2. MDD 측정. 손익비 측정.
-    # 3. 자본의 %를 투입.
     def update_candle(self, df, candle, localtime):
         candle = indicators.roc(df, period=self.period)
-        time = candle.name
         roc = df['roc']
-        # print(time, roc[-2], roc[-1])
+
         buy_entry = roc[-2] < 0 and roc[-1] > 0
         sell_entry = roc[-2] < 0 and roc[-1] < 0
         buy_exit = (roc[-2] > 0 and roc[-1] < 0)
         sell_exit = (roc[-2] < 0 and roc[-1] > 0)
 
-        # explain = f'{time} {candle.close:0.3f}/{roc[-1]:0.3f}:{roc[-2]:0.3f}'
+        explain = f'{localtime} close[{candle.close:0.3f}] roc[{roc[-2]:0.1f}, {roc[-1]:0.1f}]'
+        if not self.backtest:
+            log.logger.info(explain)
+            self.send_message(explain)
+
         if buy_entry:
             # buy_entry
             if self.position_quantity < 0:
                 log.logger.info(f'--> Close Short <-- {localtime}')
                 quantity = self.close_short()
-                self.calc_close(time, candle.close, self.position_entry_price, -quantity)
+                self.calc_close(localtime, candle.close, self.position_entry_price, -quantity)
             if self.position_quantity == 0:
                 log.logger.info(f'--> Enter Long <-- {localtime}')
                 self.open_long()
-                # print(explain)
-                self.calc_open(Type.LONG, time, candle.close, 0)
+                self.calc_open(Type.LONG, localtime, candle.close, 0)
         elif buy_exit and self.position_quantity > 0:
             # close long
             log.logger.info(f'--> Exit Long <-- {localtime}')
             quantity = self.close_long()
-            self.calc_close(time, candle.close, self.position_entry_price, quantity)
+            self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
 
         if sell_entry:
             # sell_entry
             if self.position_quantity > 0:
                 log.logger.info(f'--> Close Long <-- {localtime}')
                 quantity = self.close_long()
-                self.calc_close(time, candle.close, self.position_entry_price, quantity)
+                self.calc_close(localtime, candle.close, self.position_entry_price, quantity)
             if self.position_quantity == 0:
                 log.logger.info(f'--> Enter Short <-- {localtime}')
                 self.open_short()
-                # print(explain)
-                self.calc_open(Type.SHORT, time, candle.close, 0)
+                self.calc_open(Type.SHORT, localtime, candle.close, 0)
         elif sell_exit and self.position_quantity < 0:
             # close sell
             log.logger.info(f'--> Exit Short <-- {localtime}')
             quantity = self.close_short()
-            self.calc_close(time, candle.close, self.position_entry_price, -quantity)
+            self.calc_close(localtime, candle.close, self.position_entry_price, -quantity)
 
 
 if __name__ == '__main__':

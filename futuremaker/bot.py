@@ -80,10 +80,10 @@ class Bot(object):
         try:
             logger.info('SYMBOL: %s', self.symbol)
             logger.info('CANDLE_PERIOD: %s', self.candle_period)
-            logger.info('NOW: %s', datetime.now())
             logger.info('UCT: %s', datetime.utcnow())
             logger.info('ENV[TZ]: %s', os.getenv("TZ"))
             logger.info('TIMEZONE: %s', self.timezone)
+            logger.info('LocalTime: %s', utils.localtime(datetime.utcnow(), self.local_tz))
             logger.info('LOGLEVEL: %s', os.getenv("LOGLEVEL"))
             logger.info('TZNAME: %s', time.tzname)
             ip_address = requests.get('https://api.ipify.org?format=json').json()['ip']
