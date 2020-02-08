@@ -1,10 +1,6 @@
 import datetime
-import asyncio
-import threading
-import time
 
 from futuremaker import utils
-from futuremaker.bitmex.bitmex_ws import BitmexWS
 from futuremaker.candle_handler import CandleHandler
 from futuremaker.log import logger
 
