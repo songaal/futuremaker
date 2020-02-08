@@ -18,12 +18,12 @@ class EveryGo(Algo):
     def ready(self):
         self.wallet_summary()
 
-    def update_candle(self, df, candle):
+    def update_candle(self, df, candle, localtime):
         time = candle.name
 
         # 첫진입.
         if self.position_quantity == 0:
-            log.logger.info(f'--> Enter Long <-- {time}')
+            log.logger.info(f'--> Enter Long <-- {self.lt(time)}')
             self.open_long()
             self.calc_open(Type.LONG, time, candle.close, 0)
         else:

@@ -5,6 +5,7 @@ import time
 from collections import deque
 from datetime import datetime
 
+import pytz
 import requests
 
 from futuremaker import nexus_mock
@@ -19,7 +20,7 @@ class Bot(object):
     """
 
     def __init__(self, api, symbol, candle_limit=20, candle_period='1h',
-                 backtest=True, paper=True, test_start=None, test_end=None, test_data=None):
+                 backtest=True, paper=True, timezone='Asia/Seoul', test_start=None, test_end=None, test_data=None):
 
         if not symbol:
             raise Exception('Symbol must be set.')
@@ -32,6 +33,8 @@ class Bot(object):
         self.candle_period = candle_period
         self.backtest = backtest
         self.paper = paper
+        self.timezone = timezone
+        self.local_tz = pytz.timezone(timezone)
         self.telegram_bot_token = os.getenv('bot_token')
         self.telegram_chat_id = os.getenv('chat_id')
 
@@ -71,6 +74,7 @@ class Bot(object):
         self.nexus.callback(update_candle=algo._update_candle)
 
         algo.api = self.api
+        algo.local_tz = self.local_tz
         algo.send_message = self.send_message
         algo.backtest = self.backtest
         try:
@@ -79,6 +83,7 @@ class Bot(object):
             logger.info('NOW: %s', datetime.now())
             logger.info('UCT: %s', datetime.utcnow())
             logger.info('ENV[TZ]: %s', os.getenv("TZ"))
+            logger.info('TIMEZONE: %s', self.timezone)
             logger.info('LOGLEVEL: %s', os.getenv("LOGLEVEL"))
             logger.info('TZNAME: %s', time.tzname)
             ip_address = requests.get('https://api.ipify.org?format=json').json()['ip']

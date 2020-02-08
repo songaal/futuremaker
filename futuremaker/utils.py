@@ -12,12 +12,25 @@ from os.path import getmtime
 
 import math
 
+import pytz
+
 from futuremaker import config
 from futuremaker.log import logger
 
 
+def localtime(utc_dt, local_tz):
+    '''
+    UTC 시간을 로컬시간대로 바꿔준다.
+    :param utc_dt: utc 시간대 datetime 객체.
+    :param local_tz: 로컬시간대 tzinfo
+    :return:
+    '''
+    return utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
+
+
 def generate_signature():
     pass
+
 
 def print_traceback():
     try:

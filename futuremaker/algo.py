@@ -7,6 +7,8 @@ import traceback
 from datetime import datetime
 from json import JSONDecodeError
 
+import pytz
+
 from futuremaker import utils
 from futuremaker.binance_api import BinanceAPI
 from futuremaker import log
@@ -20,6 +22,7 @@ class Algo(object):
                  max_budget,
                  paper,
                  ):
+        self.local_tz = pytz.utc  # 나중에 bot으로부터 다시 설정된다.
         self.backtest = True  # 시작전 Bot으로부터 설정된다.
         self.paper = paper  # 페이퍼 트레이딩 모드로 실제 주문하지 않는다.
         self.api: BinanceAPI = None
@@ -35,6 +38,7 @@ class Algo(object):
         self.position_quantity = 0
         self.position_entry_price = 0
         self.position_losscut_price = 0
+        # local time 으로 유지된다.
         self.position_entry_time = datetime.fromtimestamp(0) if self.backtest else datetime.now()
 
         self.total_profit = 0.0
@@ -194,7 +198,8 @@ class Algo(object):
     def _update_candle(self, df, candle):
         try:
             self.estimated_profit(candle.name, candle.close)
-            self.update_candle(df, candle)
+            localtime = utils.localtime(candle.name, self.local_tz)
+            self.update_candle(df, candle, localtime)
         except Exception as e:
             try:
                 exc_info = sys.exc_info()
@@ -202,6 +207,12 @@ class Algo(object):
                 self.send_message(e)
                 traceback.print_exception(*exc_info)
                 del exc_info
+
+    def lt(self, utc_dt):
+        '''
+        local time - utc를 로컬 시간으로 변경
+        '''
+        return utils.localtime(utc_dt, self.local_tz)
 
     def update_candle(self, df, candle):
         """

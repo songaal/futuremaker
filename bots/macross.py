@@ -18,7 +18,7 @@ class MaCrossGo(Algo):
     def ready(self):
         self.wallet_summary()
 
-    def update_candle(self, df, candle):
+    def update_candle(self, df, candle, localtime):
         candle_time = candle.name
         # 양봉이면 사고, 음봉이면 판다.
         # diff = candle.close - candle.open

@@ -16,7 +16,7 @@ class KamaEntry(Algo):
     def ready(self):
         self.wallet_summary()
 
-    def update_candle(self, df, candle):
+    def update_candle(self, df, candle, localtime):
 
         candle = indicators.kama(df, period=5)
         time = candle.name

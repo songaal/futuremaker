@@ -22,7 +22,7 @@ class RocEntry(Algo):
     # 1. 손절하도록. 손절하면 1일후에 집입토록.
     # 2. MDD 측정. 손익비 측정.
     # 3. 자본의 %를 투입.
-    def update_candle(self, df, candle):
+    def update_candle(self, df, candle, localtime):
         candle = indicators.roc(df, period=self.period)
         time = candle.name
         roc = df['roc']
