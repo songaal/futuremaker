@@ -208,12 +208,6 @@ class Algo(object):
                 traceback.print_exception(*exc_info)
                 del exc_info
 
-    def lt(self, utc_dt):
-        '''
-        local time - utc를 로컬 시간으로 변경
-        '''
-        return utils.localtime(utc_dt, self.local_tz)
-
     def update_candle(self, df, candle):
         """
         캔들이 업데이트되어 dict가 들어온다.
@@ -228,6 +222,8 @@ class Algo(object):
 
     def close_long(self):
         if self.position_quantity > 0:
+            self.position_losscut_price = 0
+
             if self.backtest or self.paper:
                 quantity = self.position_quantity
                 self.position_quantity = 0
@@ -250,6 +246,8 @@ class Algo(object):
     def close_short(self):
 
         if self.position_quantity < 0:
+            self.position_losscut_price = 0
+
             if self.backtest or self.paper:
                 quantity = -self.position_quantity
                 self.position_quantity = 0
