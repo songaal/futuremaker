@@ -10,10 +10,11 @@ from futuremaker.position_type import Type
 
 
 class RocEntry(Algo):
-    def __init__(self, base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=10000,
-                 period=5, commission_rate=0.1, paper=True):
+    def __init__(self, base, quote, floor_decimals, init_capital, max_budget,
+                 period, commission_rate, paper, buy_unit, buy_delay):
         super().__init__(base=base, quote=quote, floor_decimals=floor_decimals, init_capital=init_capital,
-                         max_budget=max_budget, commission_rate=commission_rate, paper=paper)
+                         max_budget=max_budget, commission_rate=commission_rate, paper=paper,
+                         buy_unit=buy_unit, buy_delay=buy_delay)
         self.period = period
 
     def ready(self):
@@ -90,10 +91,10 @@ if __name__ == '__main__':
                    backtest=False, candle_period='4h')
 
     algo = RocEntry(base='BTC', quote='USDT', period=5, paper=True, floor_decimals=3,
-                    init_capital=1000, max_budget=1000000)
+                    init_capital=1000, max_budget=1000000, buy_unit=0.01, buy_delay=1)
 
-    # asyncio.run(test_bot.run(algo))
-    asyncio.run(real_bot.run(algo))
+    asyncio.run(test_bot.run(algo))
+    # asyncio.run(real_bot.run(algo))
 
 """
 # BTCUSD

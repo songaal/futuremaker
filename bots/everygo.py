@@ -11,9 +11,11 @@ from futuremaker.position_type import Type
 
 
 class EveryGo(Algo):
-    def __init__(self, base, quote, floor_decimals, paper, init_capital, max_budget, commission_rate):
+    def __init__(self, base, quote, floor_decimals, paper, init_capital, max_budget, commission_rate,
+                 buy_unit, buy_delay):
         super().__init__(base=base, quote=quote, paper=paper, floor_decimals=floor_decimals,
-                         init_capital=init_capital, max_budget=max_budget, commission_rate=commission_rate)
+                         init_capital=init_capital, max_budget=max_budget, commission_rate=commission_rate,
+                         buy_unit=buy_unit, buy_delay=buy_delay)
 
     def ready(self):
         self.wallet_summary()
@@ -55,8 +57,8 @@ if __name__ == '__main__':
     real_bot = Bot(BinanceAPI(), symbol='BTCUSDT', candle_limit=30,
                    backtest=False, candle_period='1m')
 
-    algo = EveryGo(base='BTC', quote='USDT', floor_decimals=3, paper=True,
-                   init_capital=10000, max_budget=1000000, commission_rate=0.1)
+    algo = EveryGo(base='BTC', quote='USDT', floor_decimals=3, paper=False,
+                   init_capital=100, max_budget=1000000, commission_rate=0.1, buy_unit=0.001, buy_delay=1)
 
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))

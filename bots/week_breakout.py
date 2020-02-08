@@ -10,10 +10,11 @@ from futuremaker.position_type import Type, Yoil
 
 
 class WeekBreakout(Algo):
-    def __init__(self, base='BTC', quote='USDT', floor_decimals=3, init_capital=10000, max_budget=10000,
-                 week_start=Yoil.MON, hour_start=0, long_rate=0.5, short_rate=0.5, paper=True):
+    def __init__(self, base, quote, floor_decimals, init_capital, max_budget,
+                 long_rate, short_rate, paper, buy_unit, buy_delay, week_start=Yoil.MON, hour_start=0):
         super().__init__(base=base, quote=quote, floor_decimals=floor_decimals, init_capital=init_capital,
-                         max_budget=max_budget, commission_rate=0.1, paper=paper)
+                         max_budget=max_budget, commission_rate=0.1, paper=paper,
+                         buy_unit=buy_unit, buy_delay=buy_delay)
         self.weekIndicator = WeekIndicator(week_start, hour_start, long_rate, short_rate)
 
     def ready(self):
@@ -88,7 +89,7 @@ if __name__ == '__main__':
                    )
 
     algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=3, init_capital=1000, max_budget=1000000,
-                        week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4)
+                        week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1)
 
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))

@@ -21,6 +21,8 @@ class Algo(object):
                  #  트레이딩 최대예산. 이 수치를 넘어서 사지 않는다. 단위는 quote기준.
                  max_budget,
                  paper,
+                 buy_unit,  # 나누어 살때 얼마큼씩 살지.
+                 buy_delay,  # 나누어 살때 얼마나 쉴지.
                  ):
         self.local_tz = pytz.utc  # 나중에 bot으로부터 다시 설정된다.
         self.backtest = True  # 시작전 Bot으로부터 설정된다.
@@ -53,8 +55,8 @@ class Algo(object):
         self.mdd = 0
 
         self.loanDelay = 3
-        self.buyDelay = 60
-        self.buyBTCUnit = 1
+        self.buy_unit = buy_unit
+        self.buy_delay = buy_delay
 
         self.STATUS_FILE = f'status-{self.get_name()}.json'
         self.TRADE_FILE = f'trade-{self.get_name()}.json'
@@ -311,11 +313,7 @@ class Algo(object):
         # 1btc를 초과할경우 여러번 나누어 사는 것 고려..
         togo = quantity
         while togo > 0:
-            tobuy = min(self.buyBTCUnit, togo)
-            # TODO 나눠서....
-
-
-
+            tobuy = min(self.buy_unit, togo)
             ret = self.api.create_buy_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity += tobuy
@@ -323,7 +321,7 @@ class Algo(object):
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
-                time.sleep(self.buyDelay)
+                time.sleep(self.buy_delay)
 
         message = f'Long! {self.symbol} {self.position_quantity}'
         self.send_message(message)
@@ -349,7 +347,7 @@ class Algo(object):
 
         togo = quantity
         while togo > 0:
-            tobuy = min(self.buyBTCUnit, togo)
+            tobuy = min(self.buy_unit, togo)
             ret = self.api.create_sell_order(self.symbol, tobuy)
             togo -= tobuy
             self.position_quantity -= tobuy
@@ -357,7 +355,7 @@ class Algo(object):
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
-                time.sleep(self.buyDelay)
+                time.sleep(self.buy_delay)
 
         message = f'Short! {self.symbol} {self.position_quantity}'
         self.send_message(message)
