@@ -233,7 +233,7 @@ class Algo(object):
 
             # 홀드하던 BTC를 판다.
             quantity = self.position_quantity
-            ret = self.api.create_sell_order(self.symbol, self.position_quantity)
+            self.safe_sell_order(self.symbol, self.position_quantity)
             log.order.info(f'CLOSE LONG > {ret}')
             amount = self.api.repay_all(self.quote)
             log.order.info(f'REPAY ALL > {amount}')
@@ -266,7 +266,7 @@ class Algo(object):
                 self.make_loan(self.quote, loan_amount)
 
             # 2. 자금을 가지고 BTC를 산다.
-            ret = self.api.create_buy_order(self.symbol, quantity)
+            self.safe_buy_order(self.symbol, quantity)
             log.order.info(f'CLOSE SHORT > {ret}')
             amount = self.api.repay_all(self.base)
             log.order.info(f'REPAY ALL > {amount}')
@@ -317,17 +317,7 @@ class Algo(object):
         message = f'Long.. {self.symbol} {quantity}'
         self.send_message(message)
         # buy_unit 를 초과할경우 여러번 나누어 사는 것 고려..
-        togo = quantity
-        while togo > 0:
-            tobuy = min(self.buy_unit, togo)
-            ret = self.api.create_buy_order(self.symbol, tobuy)
-            togo -= tobuy
-            self.position_quantity += tobuy
-            message = f'BUY > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
-            log.order.info(message)
-            self.send_message(message)
-            if togo > 0:
-                time.sleep(self.buy_delay)
+        self.safe_buy_order(self.symbol, quantity)
 
         message = f'Long! {self.symbol} {self.position_quantity}'
         self.send_message(message)
@@ -351,10 +341,30 @@ class Algo(object):
         message = f'Short.. {self.symbol} {quantity}'
         self.send_message(message)
 
+        self.safe_sell_order(self.symbol, quantity)
+
+        message = f'Short! {self.symbol} {self.position_quantity}'
+        self.send_message(message)
+        self.wallet_summary()
+
+    def safe_buy_order(self, symbol, quantity):
         togo = quantity
         while togo > 0:
             tobuy = min(self.buy_unit, togo)
-            ret = self.api.create_sell_order(self.symbol, tobuy)
+            ret = self.api.create_buy_order(symbol, tobuy)
+            togo -= tobuy
+            self.position_quantity += tobuy
+            message = f'BUY > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
+            log.order.info(message)
+            self.send_message(message)
+            if togo > 0:
+                time.sleep(self.buy_delay)
+
+    def safe_sell_order(self, symbol, quantity):
+        togo = quantity
+        while togo > 0:
+            tobuy = min(self.buy_unit, togo)
+            ret = self.api.create_sell_order(symbol, tobuy)
             togo -= tobuy
             self.position_quantity -= tobuy
             message = f'SELL > {ret["status"]} {ret["executedQty"]} {-self.position_quantity}/{quantity}'
@@ -362,10 +372,6 @@ class Algo(object):
             self.send_message(message)
             if togo > 0:
                 time.sleep(self.buy_delay)
-
-        message = f'Short! {self.symbol} {self.position_quantity}'
-        self.send_message(message)
-        self.wallet_summary()
 
     def wallet_summary(self):
         if self.backtest or self.paper:
