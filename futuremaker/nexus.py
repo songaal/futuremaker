@@ -36,12 +36,18 @@ class Nexus(object):
                 period_in_second = 60
             elif candle_period == '5m':
                 period_in_second = 300
+            elif candle_period == '10m':
+                period_in_second = 600
+            elif candle_period == '15m':
+                period_in_second = 600
             elif candle_period == '1h':
                 period_in_second = 3600
+            elif candle_period == '4h':
+                period_in_second = 3600 * 4
             elif candle_period == '1d':
                 period_in_second = 3600 * 24
             ts = datetime.datetime.now().timestamp() - period_in_second * candle_limit
-            since = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+            since = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:00:00')
             # 현재시각에서 since를 뺀 날짜를 string으로 만든다.
             self.candle_handler = CandleHandler(self.api, symbol, period=candle_period, since=since, _update_notify=self._update_candle)
 
