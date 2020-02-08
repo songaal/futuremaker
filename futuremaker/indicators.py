@@ -3,14 +3,6 @@ Indicators as shown by Peter Bakker at:
 https://www.quantopian.com/posts/technical-analysis-indicators-without-talib-code
 """
 
-"""
-25-Mar-2018: Fixed syntax to support the newest version of Pandas. Warnings should no longer appear.
-             Fixed some bugs regarding min_periods and NaN.
-
-			 If you find any bugs, please report to github.com/palmbook
-"""
-
-# Import Third-Party
 import pandas as pd
 import numpy as np
 
@@ -18,6 +10,7 @@ import numpy as np
 def roc(data, period=5):
     data['roc'] = data['close'].diff(period) / data['close'].shift(period) * 100.0
     return data.iloc[-1]
+
 
 def kama(data, period=12, fast_period=2, slow_period=30):
     '''
@@ -31,7 +24,6 @@ def kama(data, period=12, fast_period=2, slow_period=30):
       - smfactor1 = 1.0  - smfactor
     '''
 
-    data['roc'] = data['close'].diff(period) / data['close'].shift(period) * 100.0
     data['volatility'] = data.close.diff().abs().rolling(period).sum()
     efficiency_ratio = data['close'].diff(period).abs() / data['volatility']
     data['period'] = (efficiency_ratio * period).dropna().astype(int)

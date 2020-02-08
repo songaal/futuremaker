@@ -2,14 +2,14 @@ import os
 import sys
 
 from futuremaker import indicators, utils
+from futuremaker.algo import Algo
 from futuremaker.bot import Bot
 from futuremaker.log import logger
-import talib as ta
 
 VERSION='1.0.0'
 
 
-class TelegramGo(Bot):
+class TelegramGo(Algo):
 
     def __init__(self, params):
         symbol = params['symbol']
@@ -29,7 +29,7 @@ class TelegramGo(Bot):
                                          telegram_chat_id=telegram_chat_id, http_port=http_port)
 
         # 일반 메시지
-        self.telegram_bot.send("TelegramGo를 시작하였습니다.\n ")
+        self.send_message("TelegramGo를 시작하였습니다.")
 
     def update_orderbook(self, orderbook):
         pass
@@ -43,11 +43,8 @@ class TelegramGo(Bot):
         low = round(l[-1], 2)
         logger.info('BBands high[%s] price[%s] low[%s]', high, price, low)
         df = indicators.RSI(df, period=14)
-        rsi2 = ta.RSI(df.Close.values)
         rsi = df.RSI[-1]
         rsi = round(rsi, 2)
-        rsi2 = round(rsi2[-1], 2)
-        logger.info('RSI[%s] RSI2[%s]', rsi, rsi2)
 
         score = 0
         if price >= high:
@@ -73,11 +70,13 @@ class TelegramGo(Bot):
                    f'이유: {self.symbol} Too much buy! price[{price}] >= bbhigh[{high}] AND RSI[{rsi}] >= 60\n'\
                    f'<a href="https://www.bitmex.com/chartEmbed?symbol=XBTUSD">차트열기</a> \n' \
                    f'<a href="https://www.bitmex.com/app/trade/XBTUSD">거래소열기</a> \n'
-            self.telegram_bot.send_question(question_text=text,
-                                            yes_name="BUY",
-                                            yes_func=self.order,
-                                            yes_param={"df": df, "qty": order_qty},
-                                            no_name="CANCEL")
+            self.send_message(text)
+            # 텔레그램으로 주문받기 기능은 삭제..
+            # self.telegram_bot.send_question(question_text=text,
+            #                                 yes_name="BUY",
+            #                                 yes_func=self.order,
+            #                                 yes_param={"df": df, "qty": order_qty},
+            #                                 no_name="CANCEL")
 
         elif score <= -2:
             text = f'주문타입: <b>SELL</b>\n' \
@@ -86,27 +85,12 @@ class TelegramGo(Bot):
                    f'이유: {self.symbol} Too much sell! price[{price}] <= bblow[{low}] AND RSI[{rsi}] <= 40\n' \
                    f'<a href="https://www.bitmex.com/chartEmbed?symbol=XBTUSD">차트열기</a> \n' \
                    f'<a href="https://www.bitmex.com/app/trade/XBTUSD">거래소열기</a> \n'
-            self.telegram_bot.send_question(question_text=text,
-                                            yes_name="SELL",
-                                            yes_func=self.order,
-                                            yes_param={"df": df, "qty": -order_qty},
-                                            no_name="CANCEL")
-
-    def update_order(self, order):
-        logger.info('update_order > %s', order)
-
-    def update_position(self, position):
-        logger.info('update_position > %s', position)
-
-    def order(self, param):
-        # stop_limit_order = self.nexus.api.put_order(order_qty=param['df'].Close[-1],
-        #                                             price=param['df'].Close[-1],
-        #                                             stop_price=param['df'].Close[-1],
-        #                                             type="Market")
-        # logger.info("주문결과: %s", stop_limit_order)
-        # return f"시장가로 주문 요청합니다. 상태[{stop_limit_order['ordStatus']}]"
-        return f"시장가로 주문 요청합니다. 상태[Canceled]"
-
+            self.send_message(text)
+            # self.telegram_bot.send_question(question_text=text,
+            #                                 yes_name="SELL",
+            #                                 yes_func=self.order,
+            #                                 yes_param={"df": df, "qty": -order_qty},
+            #                                 no_name="CANCEL")
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])

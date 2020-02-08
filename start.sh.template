@@ -1,9 +1,0 @@
-#!/bin/bash
-
-export key="API_KEY"
-export secret="API_SECRET"
-export LOGLEVEL=INFO
-
-export APP_HOME=$(dirname "$0")
-echo APP_HOME=$APP_HOME
-python3 -m bots.alertgo >>$APP_HOME/output.log 2>&1 &
