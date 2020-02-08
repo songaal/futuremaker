@@ -21,6 +21,9 @@ class EveryGo(Algo):
         self.wallet_summary()
 
     def update_candle(self, df, candle, localtime):
+
+        diff = localtime - self.position_entry_time
+
         # 첫진입.
         if self.position_quantity == 0:
             log.logger.info(f'--> Enter Long <-- {localtime}')
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     real_bot = Bot(BinanceAPI(), symbol='BTCUSDT', candle_limit=30,
                    backtest=False, candle_period='1m')
 
-    algo = EveryGo(base='BTC', quote='USDT', floor_decimals=3, paper=False,
+    algo = EveryGo(base='BTC', quote='USDT', floor_decimals=3, paper=True,
                    init_capital=100, max_budget=1000000, commission_rate=0.1, buy_unit=0.001, buy_delay=1)
 
     # asyncio.run(test_bot.run(algo))

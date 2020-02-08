@@ -41,8 +41,7 @@ class Algo(object):
         self.position_entry_price = 0
         self.position_losscut_price = 0
         # local time 으로 유지된다.
-        self.position_entry_time = datetime.fromtimestamp(0) if self.backtest else datetime.now()
-
+        self.position_entry_time = utils.localtime(datetime.utcfromtimestamp(0) if self.backtest else datetime.utcnow(), self.local_tz)
         self.total_profit = 0.0
         self.total_equity = self.init_capital
         self.win_profit = 0
@@ -90,7 +89,7 @@ class Algo(object):
             self.position_quantity = status_data['position_quantity']
             self.position_entry_price = status_data['position_entry_price']
             self.position_losscut_price = status_data['position_losscut_price']
-            self.position_entry_time = datetime.strptime(status_data['position_entry_time'], self.DATETIME_FORMAT)
+            self.position_entry_time = datetime.strptime(status_data['position_entry_time'], self.DATETIME_FORMAT).replace(tzinfo=self.local_tz)
             # 성능 계산에 필요한 누적수치들..
             self.total_equity = status_data['total_equity']
             self.total_profit = status_data['total_profit']
