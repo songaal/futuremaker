@@ -285,7 +285,12 @@ class Algo(object):
         log.order.info(f'LOAN.. {asset} {amount}')
         txId = self.api.create_loan(asset, amount)
         time.sleep(self.loanDelay)
-        ret, detail = self.api.get_loan(asset, txId)
+        try:
+            ret, detail = self.api.get_loan(asset, txId)
+        except:
+            # 재시도.
+            ret, detail = self.api.get_loan(asset, txId)
+
         if ret != 0:
             log.order.info(f'LOAN FAIL {detail}')
             return
@@ -310,7 +315,7 @@ class Algo(object):
         quantity = utils.floor(amount / price, self.floor_decimals)
         message = f'Long.. {self.symbol} {quantity}'
         self.send_message(message)
-        # 1btc를 초과할경우 여러번 나누어 사는 것 고려..
+        # buy_unit 를 초과할경우 여러번 나누어 사는 것 고려..
         togo = quantity
         while togo > 0:
             tobuy = min(self.buy_unit, togo)
