@@ -11,7 +11,7 @@ from futuremaker.position_type import Type
 
 class RocEntry(Algo):
     def __init__(self, base, quote, floor_decimals, init_capital, max_budget,
-                 period, commission_rate, paper, buy_unit, buy_delay):
+                 period, paper, buy_unit, buy_delay, commission_rate=0.1):
         super().__init__(base=base, quote=quote, floor_decimals=floor_decimals, init_capital=init_capital,
                          max_budget=max_budget, commission_rate=commission_rate, paper=paper,
                          buy_unit=buy_unit, buy_delay=buy_delay)
@@ -86,13 +86,13 @@ if __name__ == '__main__':
                    # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv'
                    )
     real_bot = Bot(BinanceAPI(), symbol='BTCUSDT', candle_limit=10,
-                   backtest=False, candle_period='4h')
+                   backtest=False, candle_period='1m')
 
     algo = RocEntry(base='BTC', quote='USDT', period=5, paper=True, floor_decimals=3,
                     init_capital=1000, max_budget=1000000, buy_unit=0.01, buy_delay=1)
 
-    asyncio.run(test_bot.run(algo))
-    # asyncio.run(real_bot.run(algo))
+    # asyncio.run(test_bot.run(algo))
+    asyncio.run(real_bot.run(algo))
 
 """
 # BTCUSD

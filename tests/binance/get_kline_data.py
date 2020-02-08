@@ -8,7 +8,8 @@ client = Client()
 
 # fetch 1 minute klines for the last day up until now
 # klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_5MINUTE, "90 day ago UTC", limit=1000)
-klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_1DAY, "2018-01-18", limit=1000)
+# klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_1DAY, "2018-01-18", limit=1000)
+klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_1MINUTE, "2020-02-08 00:50:00", limit=10)
 
 print(klines)
 df = pd.DataFrame(klines, columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'volume', 'trades', 'taker_buy_base_volume', 'taker_buy_quote_volume','ignore'])

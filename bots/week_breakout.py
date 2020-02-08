@@ -92,15 +92,12 @@ if __name__ == '__main__':
                    # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv',
                    )
     real_bot = Bot(BinanceAPI(), symbol='BTCUSDT', candle_limit=24 * 7 * 2,
-                   backtest=False,
-                   candle_period='1m',
-                   telegram_bot_token='852670167:AAExawLUJfb-lGKVHQkT5mthCTEOT_BaQrg',
-                   telegram_chat_id='352354994'
+                   backtest=False, candle_period='4h',
                    )
 
     algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=3, init_capital=1000, max_budget=1000000,
                         week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1,
-                        commission_rate=0.1)
+                        commission_rate=0.1, paper=True)
 
     # asyncio.run(test_bot.run(algo))
     asyncio.run(real_bot.run(algo))
