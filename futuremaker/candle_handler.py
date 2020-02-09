@@ -76,8 +76,8 @@ class CandleHandler(object):
         # if self.last_candle is None or self.last_candle['t'] == candle['t']:
         #     # 동일시간대면 일단 최신데이터로 간직한다.
         #     self.last_candle = candle
-        # if self.last_candle is not None and self.last_candle['t'] != candle['t']:
-        if self.last_candle is not None:
+        if self.last_candle is not None and self.last_candle['t'] != candle['t']:
+        # if self.last_candle is not None:
             # last candle로 업데이트하고 notify를 호출하여 전략이 실행되게끔 한다.
             unit_time = self.last_candle['t']
             index = pd.to_datetime(unit_time, unit='ms')
