@@ -38,8 +38,7 @@ class WeekBreakout(Algo):
             self.send_message(explain)
 
         # 1. candle 이 long_break 를 뚫으면 롱 포지션을 취한다.
-        # if candle.open < candle.long_break < candle.close:
-        if candle.long_break < candle.close:
+        if candle.open < candle.long_break < candle.close:
             # 하루이상 지나야 매매한다.
             if (localtime - self.position_entry_time).days >= 1:
                 if self.position_quantity < 0:
@@ -52,8 +51,8 @@ class WeekBreakout(Algo):
                     self.calc_open(Type.LONG, localtime, candle.close, candle.long_break)
 
         # 2. candle 이 short_break 를 뚫으면 숏 포지션을 취한다.
-        # if candle.close < candle.short_break < candle.open:
-        if candle.close < candle.short_break:
+        # if candle.close < candle.short_break:
+        if candle.close < candle.short_break < candle.open:
             if (localtime - self.position_entry_time).days >= 1:
                 # short 수행.
                 if self.position_quantity > 0:
@@ -84,7 +83,7 @@ class WeekBreakout(Algo):
 
 if __name__ == '__main__':
     params = utils.parse_param_map(sys.argv[1:])
-    year = 2017
+    year = 2018
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
