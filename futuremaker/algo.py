@@ -41,7 +41,7 @@ class Algo(object):
         self.position_entry_price = 0
         self.position_losscut_price = 0
         # local time 으로 유지된다.
-        self.position_entry_time = utils.localtime(datetime.utcfromtimestamp(0) if self.backtest else datetime.utcnow(), self.local_tz)
+        self.position_entry_time = None
         self.total_profit = 0.0
         self.total_equity = self.init_capital
         self.win_profit = 0
@@ -74,6 +74,9 @@ class Algo(object):
         """
         봇이 시작할때 기존 포지션 정보가 없으므로, 로드하도록 한다.
         """
+        # 포지션 시작시간은 여기서 생성해야 local_tz값이 설정되어 있다.
+        self.position_entry_time = utils.localtime(datetime.utcfromtimestamp(0) if self.backtest else datetime.utcnow(), self.local_tz)
+
         if self.backtest:
             return
 

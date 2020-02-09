@@ -38,7 +38,8 @@ class WeekBreakout(Algo):
             self.send_message(explain)
 
         # 1. candle 이 long_break 를 뚫으면 롱 포지션을 취한다.
-        if candle.open < candle.long_break < candle.close:
+        # if candle.open < candle.long_break < candle.close:
+        if candle.long_break < candle.close:
             # 하루이상 지나야 매매한다.
             if (localtime - self.position_entry_time).days >= 1:
                 if self.position_quantity < 0:
@@ -51,7 +52,8 @@ class WeekBreakout(Algo):
                     self.calc_open(Type.LONG, localtime, candle.close, candle.long_break)
 
         # 2. candle 이 short_break 를 뚫으면 숏 포지션을 취한다.
-        if candle.close < candle.short_break < candle.open:
+        # if candle.close < candle.short_break < candle.open:
+        if candle.close < candle.short_break:
             if (localtime - self.position_entry_time).days >= 1:
                 # short 수행.
                 if self.position_quantity > 0:
@@ -86,8 +88,8 @@ if __name__ == '__main__':
     test_bot = Bot(None, symbol='BTCUSDT', candle_limit=24 * 7 * 2,
                    candle_period='1h',
                    test_start=f'{year}-01-01', test_end=f'{year}-12-31',
-                   # test_data='../candle_data/BINANCE_BTCUSDT, 60.csv',
-                   test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
+                   test_data='../candle_data/BINANCE_BTCUSDT, 60.csv',
+                   # test_data='../candle_data/BITFINEX_BTCUSD, 120.csv'
                    # test_data='../candle_data/BINANCE_ETCUSDT, 60.csv',
                    # test_data='../candle_data/BITFINEX_ETHUSD, 60.csv',
                    )
@@ -99,13 +101,14 @@ if __name__ == '__main__':
                         week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1,
                         commission_rate=0.1, paper=True)
 
-    # asyncio.run(test_bot.run(algo))
-    asyncio.run(real_bot.run(algo))
+    asyncio.run(test_bot.run(algo))
+    # asyncio.run(real_bot.run(algo))
 
 """
 # BTCUSDT
 2019: TOT_EQUITY:4376 TOT_PROFIT:3376 (337.63%) DD:9.3% MDD:16.4% TOT_TRADE:26 WIN%:38.5% P/L:6.0
 2018: TOT_EQUITY:3364 TOT_PROFIT:2364 (236.42%) DD:0.0% MDD:19.4% TOT_TRADE:29 WIN%:48.3% P/L:4.0
+2018: TOT_EQUITY:1996 TOT_PROFIT:996 (99.57%) DD:0.0% MDD:28.5% TOT_TRADE:36 WIN%:38.9% P/L:2.7 --- 조건변형.느슨하게.
 2017: TOT_EQUITY:10516 TOT_PROFIT:9516 (951.57%) DD:0.0% MDD:44.1% TOT_TRADE:27 WIN%:44.4% P/L:5.0 (2시간봉) 
 # ETHUSD
 2019: TOT_EQUITY:3071 TOT_PROFIT:2071 (207.10%) DD:4.9% MDD:10.8% TOT_TRADE:25 WIN%:40.0% P/L:8.2
