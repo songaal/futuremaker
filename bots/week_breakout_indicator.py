@@ -64,4 +64,4 @@ class WeekIndicator(IndicatorGenerator):
         df.loc[index, 'week_open_price'] = self.week_open_price
         df.loc[index, 'long_break'] = self.long_price
         df.loc[index, 'short_break'] = self.short_price
-        print(f'Append > {index} H[{candle.high}] L[{candle.low}] WeekOpen[{self.week_open_price}] LONG[{self.long_price}] SHORT[{self.short_price}]')
+        # print(f'Append > {index} H[{candle.high}] L[{candle.low}] WeekOpen[{self.week_open_price}] LONG[{self.long_price}] SHORT[{self.short_price}]')
