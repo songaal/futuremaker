@@ -100,8 +100,8 @@ if __name__ == '__main__':
                         week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1,
                         commission_rate=0.1, paper=True)
 
-    # asyncio.run(test_bot.run(algo))
-    asyncio.run(real_bot.run(algo))
+    asyncio.run(test_bot.run(algo))
+    # asyncio.run(real_bot.run(algo))
 
 """
 # BTCUSDT

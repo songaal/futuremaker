@@ -17,12 +17,13 @@ class BarList:
 
     def update(self, timestamp, open, high, low, close, volume):
 
-        row = self.df.loc[timestamp]
+        row = dict.fromkeys(list(self.df.columns))
         row['open'] = open
         row['high'] = high
         row['low'] = low
         row['close'] = close
         row['volume'] = volume
+        self.df.loc[timestamp] = row
 
         size = len(self.df.index)
         if size > self.history:
