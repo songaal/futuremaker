@@ -22,13 +22,18 @@ class BarList:
         logger.info('self.df.columns > ')
         logger.info(self.df.columns)
         logger.info(dict.fromkeys(list(self.df.columns)))
-        logger.info('row > ')
         row = dict.fromkeys(list(self.df.columns))
+        logger.info('row > ')
+        logger.info(row)
         row['open'] = open
         row['high'] = high
         row['low'] = low
         row['close'] = close
         row['volume'] = volume
+        logger.info('row2 > ')
+        logger.info(row)
+        logger.info('timestamp > ')
+        logger.info(timestamp)
         self.df.loc[timestamp] = row
         logger.info('df2 > ')
         logger.info(self.df)
