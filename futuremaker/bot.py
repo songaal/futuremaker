@@ -20,7 +20,7 @@ class Bot(object):
     """
 
     def __init__(self, api, symbol, candle_limit=20, candle_period='1h',
-                 backtest=True, paper=True, timezone='Asia/Seoul', test_start=None, test_end=None, test_data=None):
+                 backtest=True, timezone='Asia/Seoul', test_start=None, test_end=None, test_data=None):
 
         if not symbol:
             raise Exception('Symbol must be set.')
@@ -32,7 +32,6 @@ class Bot(object):
         self.symbol = symbol
         self.candle_period = candle_period
         self.backtest = backtest
-        self.paper = paper
         self.timezone = timezone
         self.local_tz = pytz.timezone(timezone)
         self.telegram_bot_token = os.getenv('bot_token')
