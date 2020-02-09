@@ -17,6 +17,12 @@ class BarList:
 
     def update(self, timestamp, open, high, low, close, volume):
 
+        logger.info('df1 > ')
+        logger.info(self.df)
+        logger.info('self.df.columns > ')
+        logger.info(self.df.columns)
+        logger.info(dict.fromkeys(list(self.df.columns)))
+        logger.info('row > ')
         row = dict.fromkeys(list(self.df.columns))
         row['open'] = open
         row['high'] = high
@@ -24,6 +30,8 @@ class BarList:
         row['close'] = close
         row['volume'] = volume
         self.df.loc[timestamp] = row
+        logger.info('df2 > ')
+        logger.info(self.df)
 
         size = len(self.df.index)
         if size > self.history:
