@@ -15,7 +15,6 @@ class CandleHandler(object):
         self.symbol = symbol
         self.period = period
         self.since = since # 첨엔 이전 데이터가 몇개 필요하므로 since를 계산해서 받는다.
-        self.history = 100 # 캔들은 100 개 유지한다.
         self.datetime_format = '%Y-%m-%dT%H:%M:%S.%fZ'
         self.candle = None
         # 콜백함수.
@@ -24,6 +23,7 @@ class CandleHandler(object):
 
     def start(self):
         new_data = self.api.bulk_klines(symbol=self.symbol, timeframe=self.period, since=self.since)
+        history = len(new_data)
         index_list = []
         data_list = []
         for row in new_data:
@@ -40,7 +40,7 @@ class CandleHandler(object):
             })
 
         freq = utils.period_to_freq(self.period)
-        self.candle = BarList(self.symbol, self.history, freq)
+        self.candle = BarList(self.symbol, history, freq)
         self.candle.init(index_list, data_list)
         # websocket
         self.api.start_websocket(self.symbol, self.period, self.__update)
@@ -73,8 +73,8 @@ class CandleHandler(object):
         }
         """
         candle = row['k']
-        # if self.last_candle is not None and self.last_candle['t'] != candle['t']:
-        if self.last_candle is not None:
+        if self.last_candle is not None and self.last_candle['t'] != candle['t']:
+        # if self.last_candle is not None:
             # last candle로 업데이트하고 notify를 호출하여 전략이 실행되게끔 한다.
             unit_time = self.last_candle['t']
             index = pd.to_datetime(unit_time, unit='ms')
