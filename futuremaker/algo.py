@@ -53,7 +53,7 @@ class Algo(object):
         self.dd = 0
         self.mdd = 0
 
-        self.loanDelay = 3
+        self.loanDelay = 5
         self.buy_unit = buy_unit
         self.buy_delay = buy_delay
 
@@ -281,19 +281,23 @@ class Algo(object):
         if self.backtest:
             return
 
-        log.order.info(f'LOAN.. {asset} {amount}')
-        txId = self.api.create_loan(asset, amount)
-        time.sleep(self.loanDelay)
-        try:
-            ret, detail = self.api.get_loan(asset, txId)
-        except:
-            # 재시도.
-            time.sleep(1)
-            ret, detail = self.api.get_loan(asset, txId)
+        i = 1
+        while True:
+            try:
+                log.order.info(f'LOAN try {i}.. {asset} {amount}')
+                txId = self.api.create_loan(asset, amount)
+                log.order.info(f'LOAN txId {txId}')
+                time.sleep(self.loanDelay)
+                ret, detail = self.api.get_loan(asset, txId)
+                log.order.info(f'LOAN ret {ret}')
+                if ret == 0:
+                    break
+            except Exception as e:
+                log.logger.error(e)
+                log.logger.info(f'차용에 문제가 생겨 {self.loanDelay * 3} 초후에 다시 한번 시도 합니다.')
+                time.sleep(self.loanDelay * 3)
+                i += 1
 
-        if ret != 0:
-            log.order.info(f'LOAN FAIL {detail}')
-            return
         log.order.info(f'LOAN! {asset} {amount}')
         self.send_message(f'Loan! {asset} {amount}')
 

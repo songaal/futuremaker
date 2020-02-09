@@ -51,7 +51,12 @@ def test_get_klines():
 
 
 def test_ws_kline():
-    api.start_websocket(symbol, '1h', lambda s: print(s))
+    def test(s):
+        time.sleep(5)
+        import datetime
+        print(datetime.datetime.fromtimestamp(s['E']/1000))
+        # callback은 처리되지 않으면 밀린다. 즉, update_candle에서 시간이 몇시간 걸린다면, 그다음 들어오는 candle은 한참 이전의 캔들이 들어옴.
+    api.start_websocket(symbol, '1m', test)
 
 
 def get_my_trade():
@@ -62,4 +67,4 @@ def test_get_balance():
     print(api.get_balance('USDT'))
 
 
-test_get_balance()
+test_ws_kline()
