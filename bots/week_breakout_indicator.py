@@ -54,7 +54,7 @@ class WeekIndicator(IndicatorGenerator):
             self.week_low = np.NaN
             self.long_price = self.week_open_price + self.long_rate * volatility
             self.short_price = self.week_open_price - self.short_rate * volatility
-            # print('WEEK OPENED > ', index, ', week_open_price: ', self.week_open_price, ', volat: ', volatility, self.short_price, '~', self.long_price)
+            print('WEEK OPENED > ', index, ', week_open_price: ', self.week_open_price, ', volat: ', volatility, self.short_price, '~', self.long_price)
 
         # 매시간 계산.
         self.week_high = np.nanmax([self.week_high, candle.high])
@@ -64,4 +64,4 @@ class WeekIndicator(IndicatorGenerator):
         df.loc[index, 'week_open_price'] = self.week_open_price
         df.loc[index, 'long_break'] = self.long_price
         df.loc[index, 'short_break'] = self.short_price
-        # print(index, candle.high, candle.low, self.week_open_price, self.long_price, self.short_price)
+        print(f'Append > {index} H[{candle.high}] L[{candle.low}] WeekOpen[{self.week_open_price}] LONG[{self.long_price}] SHORT[{self.short_price}]')
