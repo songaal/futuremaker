@@ -175,7 +175,7 @@ class Algo(object):
             "action" : "SELL",
             "position" : "NONE",
             "price" : 8751.1,
-            "quantity": 1.34,python
+            "quantity": 1.34,
             "pnl": {
                 "total_equity" : 10203,
                 "total_profit" : 203,
