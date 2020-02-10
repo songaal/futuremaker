@@ -5,6 +5,7 @@ import sys
 import time
 import traceback
 from datetime import datetime
+from decimal import Decimal, ROUND_DOWN
 from json import JSONDecodeError
 
 import pytz
@@ -88,6 +89,7 @@ class Algo(object):
             status_data = json.load(json_file)
             self.base = status_data['base']
             self.quote = status_data['quote']
+            self.symbol = status_data['symbol']
             self.init_capital = status_data['init_capital']
             self.position_quantity = status_data['position_quantity']
             self.position_entry_price = status_data['position_entry_price']
@@ -142,6 +144,7 @@ class Algo(object):
         status_data = {
             "base": self.base,
             "quote": self.quote,
+            "symbol": self.symbol,
             "init_capital": self.init_capital,
             "position_quantity": self.position_quantity,
             "position_entry_price": self.position_entry_price,
@@ -354,30 +357,36 @@ class Algo(object):
         self.wallet_summary()
 
     def safe_buy_order(self, symbol, quantity):
-        togo = quantity
+        position_quantity = Decimal(str(self.position_quantity))
+        togo = Decimal(str(quantity))
         while togo > 0:
-            tobuy = min(self.buy_unit, togo)
+            tobuy = Decimal(min(self.buy_unit, togo))
+            tobuy = tobuy.quantize(Decimal(str(1 / 10 ** self.floor_decimals)), rounding=ROUND_DOWN)
             ret = self.api.create_buy_order(symbol, tobuy)
             togo -= tobuy
-            self.position_quantity += tobuy
-            message = f'BUY > {ret["status"]} {ret["executedQty"]} {self.position_quantity}/{quantity}'
+            position_quantity += tobuy
+            message = f'BUY > {ret["status"]} {ret["executedQty"]} {position_quantity}/{quantity}'
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
                 time.sleep(self.buy_delay)
+        self.position_quantity = float(position_quantity)
 
     def safe_sell_order(self, symbol, quantity):
-        togo = quantity
+        position_quantity = Decimal(str(self.position_quantity))
+        togo = Decimal(str(quantity))
         while togo > 0:
-            tobuy = min(self.buy_unit, togo)
+            tobuy = Decimal(min(self.buy_unit, togo))
+            tobuy = tobuy.quantize(Decimal(str(1 / 10 ** self.floor_decimals)), rounding=ROUND_DOWN)
             ret = self.api.create_sell_order(symbol, tobuy)
             togo -= tobuy
-            self.position_quantity -= tobuy
-            message = f'SELL > {ret["status"]} {ret["executedQty"]} {-self.position_quantity}/{quantity}'
+            position_quantity -= tobuy
+            message = f'SELL > {ret["status"]} {ret["executedQty"]} {position_quantity}/{quantity}'
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
                 time.sleep(self.buy_delay)
+        self.position_quantity = float(position_quantity)
 
     def wallet_summary(self):
         if self.backtest or self.paper:

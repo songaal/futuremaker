@@ -29,7 +29,7 @@ class WeekBreakout(Algo):
 
         explain = f'{localtime} ' \
                   f'position[{self.position_quantity:0.3f}] open[{candle.open:0.3f}] long[{candle.long_break:0.3f}] ' \
-                  f'short[{candle.short_break:0.3f}] close[{candle.close:0.3f}] ' \
+                  f'short[{candle.short_break:0.3f}] close[{candle.close:0.3f}] losscut[{self.position_losscut_price:0.3f}]' \
                   f'localtime[{localtime}] entry_time[{self.position_entry_time}]\n' \
                   f'long_entry[{long_entry}] short_entry[{short_entry}] time_condition[{time_condition}]'
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
                    backtest=False, candle_period='4h',
                    )
 
-    algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=3, init_capital=1000, max_budget=1000000,
+    algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=2, init_capital=1000, max_budget=1000000,
                         week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1,
                         commission_rate=0.1, paper=True)
 
