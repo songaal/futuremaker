@@ -25,7 +25,7 @@ class RocEntry(Algo):
         roc = df['roc']
 
         buy_entry = roc[-2] < 0 and roc[-1] > 0
-        sell_entry = roc[-2] < 0 and roc[-1] < 0
+        sell_entry = roc[-2] > 0 and roc[-1] < 0
         buy_exit = (roc[-2] > 0 and roc[-1] < 0)
         sell_exit = (roc[-2] < 0 and roc[-1] > 0)
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     real_bot = Bot(BinanceAPI(), symbol='BTCUSDT', candle_limit=10,
                    backtest=False, candle_period='1m')
 
-    algo = RocEntry(base='BTC', quote='USDT', period=5, paper=True, floor_decimals=3,
+    algo = RocEntry(base='BTC', quote='USDT', period=12, paper=True, floor_decimals=3,
                     init_capital=1000, max_budget=1000000, buy_unit=0.01, buy_delay=1)
 
     # asyncio.run(test_bot.run(algo))
