@@ -97,7 +97,7 @@ if __name__ == '__main__':
                    )
 
     algo = WeekBreakout(base='BTC', quote='USDT', floor_decimals=3, init_capital=1000, max_budget=1000000,
-                        week_start=Yoil.MON, hour_start=0, long_rate=0.4, short_rate=0.4, buy_unit=0.01, buy_delay=1,
+                        week_start=Yoil.MON, hour_start=0, long_rate=0.6, short_rate=0.5, buy_unit=0.01, buy_delay=1,
                         commission_rate=0.1, paper=True)
 
     asyncio.run(test_bot.run(algo))
