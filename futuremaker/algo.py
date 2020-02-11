@@ -316,8 +316,10 @@ class Algo(object):
         # 얼마나 빌릴지 계산.
         price = self.api.get_price(self.symbol)
         info = self.api.margin_account_info()
-        total_value = utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 1)
-        max_budget = utils.floor_int(self.max_budget, 1)  # BTC 가격에 과적합된 코드
+        total_value = utils.floor_int(price * float(info["totalNetAssetOfBtc"]), 2)
+        if total_value == 0:
+            raise Exception(f'잔고가 없습니다. {info}')
+        max_budget = utils.floor_int(self.max_budget, 2)  # BTC 가격에 과적합된 코드
         amount = min(max_budget, total_value)
         self.make_loan(self.quote, amount)
 
@@ -341,6 +343,8 @@ class Algo(object):
         price = self.api.get_price(self.symbol)
         info = self.api.margin_account_info()
         total_value = utils.floor(float(info["totalNetAssetOfBtc"]), self.floor_decimals)
+        if total_value == 0:
+            raise Exception(f'잔고가 없습니다. {info}')
         max_amount = utils.floor(self.max_budget / price, self.floor_decimals)  # BTC 가격에 과적합된 코드
         quantity = min(max_amount, total_value)
         self.make_loan(self.base, quantity)
@@ -359,13 +363,15 @@ class Algo(object):
     def safe_buy_order(self, symbol, quantity):
         position_quantity = Decimal(str(self.position_quantity))
         togo = Decimal(str(quantity))
+        done = Decimal(0)
         while togo > 0:
             tobuy = Decimal(min(self.buy_unit, togo))
             tobuy = tobuy.quantize(Decimal(str(1 / 10 ** self.floor_decimals)), rounding=ROUND_DOWN)
             ret = self.api.create_buy_order(symbol, tobuy)
             togo -= tobuy
             position_quantity += tobuy
-            message = f'BUY > {ret["status"]} {ret["executedQty"]} {position_quantity}/{quantity}'
+            done += tobuy
+            message = f'BUY > {ret["status"]} {ret["executedQty"]} {done}/{quantity}'
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
@@ -375,13 +381,15 @@ class Algo(object):
     def safe_sell_order(self, symbol, quantity):
         position_quantity = Decimal(str(self.position_quantity))
         togo = Decimal(str(quantity))
+        done = Decimal(0)
         while togo > 0:
             tobuy = Decimal(min(self.buy_unit, togo))
             tobuy = tobuy.quantize(Decimal(str(1 / 10 ** self.floor_decimals)), rounding=ROUND_DOWN)
             ret = self.api.create_sell_order(symbol, tobuy)
             togo -= tobuy
             position_quantity -= tobuy
-            message = f'SELL > {ret["status"]} {ret["executedQty"]} {position_quantity}/{quantity}'
+            done += tobuy
+            message = f'SELL > {ret["status"]} {ret["executedQty"]} {done}/{quantity}'
             log.order.info(message)
             self.send_message(message)
             if togo > 0:
