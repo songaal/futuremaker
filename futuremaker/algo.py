@@ -239,7 +239,7 @@ class Algo(object):
             # 홀드하던 BTC를 판다.
             quantity = self.position_quantity
             self.safe_sell_order(self.symbol, self.position_quantity)
-            log.order.info(f'CLOSE LONG > {ret}')
+            log.order.info(f'CLOSE LONG Done!')
             amount = self.api.repay_all(self.quote)
             log.order.info(f'REPAY ALL > {amount}')
             message = f'Close Long {self.symbol} {self.position_quantity}\nRepay All {self.base} {amount}'
@@ -272,7 +272,7 @@ class Algo(object):
 
             # 2. 자금을 가지고 BTC를 산다.
             self.safe_buy_order(self.symbol, quantity)
-            log.order.info(f'CLOSE SHORT > {ret}')
+            log.order.info(f'CLOSE SHORT Done!')
             amount = self.api.repay_all(self.base)
             log.order.info(f'REPAY ALL > {amount}')
             message = f'Close Short {self.symbol} {quantity}\nRepay All {self.base} {amount}'
