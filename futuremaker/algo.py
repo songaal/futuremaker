@@ -446,8 +446,8 @@ class Algo(object):
 
     def calc_close(self, localtime, exit_price, entry_price, quantity):
         # 이익 확인.
-        profit = quantity * ((exit_price - entry_price) / entry_price) * exit_price
-        commission = self.commission_rate / 100 * 2 * abs(profit)  # 사고 파는 수수료라 2를 곱한다.
+        profit = quantity * ((exit_price - entry_price) / entry_price) * entry_price
+        commission = self.commission_rate / 100 * (abs(quantity * entry_price) + abs(quantity * exit_price))  # 사고 파는 수수료
         profit -= commission
         profit_pct = abs(profit / quantity / entry_price * 100)
         profit_pct = profit_pct if profit > 0 else -profit_pct
